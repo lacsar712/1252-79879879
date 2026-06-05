@@ -59,6 +59,18 @@ const routes: RouteRecordRaw[] = [
                 name: 'FeedbackList',
                 component: () => import('@/views/FeedbackList.vue'),
                 meta: { title: '我的反馈', requiresAuth: true }
+            },
+            {
+                path: 'stock-taking/:id',
+                name: 'StockTakingDetail',
+                component: () => import('@/views/StockTakingDetail.vue'),
+                meta: { title: '盘点详情', requiresAdmin: true }
+            },
+            {
+                path: 'stock-taking-history',
+                name: 'StockTakingHistory',
+                component: () => import('@/views/StockTakingHistory.vue'),
+                meta: { title: '盘点历史记录', requiresAdmin: true }
             }
         ]
     },

@@ -18,6 +18,7 @@ from routes.books import router as books_router
 from routes.promotions import router as promotions_router
 from routes.feedbacks import router as feedbacks_router
 from routes.chapters import router as chapters_router
+from routes.stock_takings import router as stock_takings_router
 
 # 配置日志
 logging.basicConfig(
@@ -75,6 +76,7 @@ app.include_router(books_router)
 app.include_router(promotions_router)
 app.include_router(feedbacks_router)
 app.include_router(chapters_router)
+app.include_router(stock_takings_router)
 
 # 挂载静态文件
 # 确保static目录存在

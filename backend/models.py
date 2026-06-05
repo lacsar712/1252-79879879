@@ -127,3 +127,35 @@ class BookChapter(Base):
     is_public = Column(Boolean, default=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class StockTaking(Base):
+    """库存盘点任务模型"""
+    __tablename__ = "stock_takings"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    task_no = Column(String(50), unique=True, index=True, nullable=False)
+    name = Column(String(200), nullable=False, index=True)
+    scope = Column(String(100), nullable=False)
+    person_in_charge = Column(String(100), nullable=True)
+    remark = Column(Text, nullable=True)
+    status = Column(String(20), nullable=False, default="draft", index=True)
+    created_by = Column(Integer, nullable=False, index=True)
+    confirmed_by = Column(Integer, nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    confirmed_at = Column(DateTime, nullable=True)
+
+
+class StockTakingItem(Base):
+    """库存盘点明细模型"""
+    __tablename__ = "stock_taking_items"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    stock_taking_id = Column(Integer, nullable=False, index=True)
+    book_id = Column(Integer, nullable=False, index=True)
+    expected_stock = Column(Integer, nullable=False, default=0)
+    actual_stock = Column(Integer, nullable=True)
+    difference = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

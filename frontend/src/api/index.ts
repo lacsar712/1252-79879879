@@ -6,7 +6,9 @@ import type {
     FeedbackTypeOption, FeedbackStatusOption, FeedbackUploadResponse,
     FeedbackReply,
     BookChapter, BookChapterPublic, BookChapterCreate, BookChapterUpdate,
-    BookChapterListResponse, BookChapterPublicListResponse
+    BookChapterListResponse, BookChapterPublicListResponse,
+    StockTaking, StockTakingListResponse, StockTakingCreate, StockTakingUpdate,
+    StockTakingBatchEntryRequest, StockTakingScopeOption
 } from '@/types'
 import { ElMessage } from 'element-plus'
 
@@ -171,5 +173,47 @@ export const api = {
         instance.delete(`/chapters/${chapterId}`),
 
     previewChapter: (chapterId: number): Promise<BookChapter> =>
-        instance.get(`/chapters/preview/${chapterId}`)
+        instance.get(`/chapters/preview/${chapterId}`),
+
+    // 库存盘点相关
+    getStockTakings: (params?: {
+        page?: number
+        page_size?: number
+        status?: string
+        keyword?: string
+    }): Promise<StockTakingListResponse> =>
+        instance.get('/stock-takings', { params }),
+
+    getStockTakingHistory: (params?: {
+        page?: number
+        page_size?: number
+        keyword?: string
+        start_date?: string
+        end_date?: string
+    }): Promise<StockTakingListResponse> =>
+        instance.get('/stock-takings/history', { params }),
+
+    getStockTaking: (id: number): Promise<StockTaking> =>
+        instance.get(`/stock-takings/${id}`),
+
+    createStockTaking: (data: StockTakingCreate): Promise<StockTaking> =>
+        instance.post('/stock-takings', data),
+
+    updateStockTaking: (id: number, data: StockTakingUpdate): Promise<StockTaking> =>
+        instance.put(`/stock-takings/${id}`, data),
+
+    startStockTaking: (id: number): Promise<StockTaking> =>
+        instance.post(`/stock-takings/${id}/start`),
+
+    batchEntryStock: (id: number, data: StockTakingBatchEntryRequest): Promise<StockTaking> =>
+        instance.post(`/stock-takings/${id}/entry`, data),
+
+    confirmStockTaking: (id: number): Promise<StockTaking> =>
+        instance.post(`/stock-takings/${id}/confirm`),
+
+    cancelStockTaking: (id: number): Promise<StockTaking> =>
+        instance.post(`/stock-takings/${id}/cancel`),
+
+    getStockTakingScopes: (): Promise<StockTakingScopeOption[]> =>
+        instance.get('/stock-takings/scopes/list')
 }

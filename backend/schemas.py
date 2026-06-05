@@ -313,3 +313,85 @@ class BookChapterListResponse(BaseModel):
 class BookChapterPublicListResponse(BaseModel):
     total: int
     items: List[BookChapterPublicResponse]
+
+
+# ========== 库存盘点相关 Schema ==========
+class StockTakingItemBase(BaseModel):
+    book_id: int = Field(..., gt=0)
+
+
+class StockTakingItemCreate(StockTakingItemBase):
+    pass
+
+
+class StockTakingItemUpdate(BaseModel):
+    item_id: int = Field(..., gt=0)
+    actual_stock: int = Field(..., ge=0)
+
+
+class StockTakingItemResponse(StockTakingItemBase):
+    id: int
+    stock_taking_id: int
+    expected_stock: int
+    actual_stock: Optional[int] = None
+    difference: Optional[int] = None
+    book: Optional[BookResponse] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class StockTakingBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    scope: str = Field(..., min_length=1, max_length=100)
+    person_in_charge: Optional[str] = Field(None, max_length=100)
+    remark: Optional[str] = None
+
+
+class StockTakingCreate(StockTakingBase):
+    book_ids: List[int] = Field(..., min_length=1)
+
+
+class StockTakingUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    scope: Optional[str] = Field(None, min_length=1, max_length=100)
+    person_in_charge: Optional[str] = Field(None, max_length=100)
+    remark: Optional[str] = None
+    book_ids: Optional[List[int]] = Field(None, min_length=1)
+
+
+class StockTakingResponse(StockTakingBase):
+    id: int
+    task_no: str
+    status: str
+    created_by: int
+    confirmed_by: Optional[int] = None
+    created_by_name: Optional[str] = None
+    confirmed_by_name: Optional[str] = None
+    items: List[StockTakingItemResponse] = Field(default_factory=list)
+    total_books: int = 0
+    completed_count: int = 0
+    difference_count: int = 0
+    created_at: datetime
+    updated_at: datetime
+    confirmed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class StockTakingListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[StockTakingResponse]
+
+
+class StockTakingBatchEntryRequest(BaseModel):
+    items: List[StockTakingItemUpdate] = Field(..., min_length=1)
+
+
+class StockTakingConfirmRequest(BaseModel):
+    pass

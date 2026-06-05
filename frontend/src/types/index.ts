@@ -248,3 +248,73 @@ export interface BookChapterPublicListResponse {
     total: number
     items: BookChapterPublic[]
 }
+
+export interface StockTakingItem {
+    id: number
+    stock_taking_id: number
+    book_id: number
+    expected_stock: number
+    actual_stock: number | null
+    difference: number | null
+    book: Book | null
+    created_at: string
+    updated_at: string
+}
+
+export interface StockTaking {
+    id: number
+    task_no: string
+    name: string
+    scope: string
+    person_in_charge: string | null
+    remark: string | null
+    status: 'draft' | 'in_progress' | 'confirmed' | 'cancelled'
+    created_by: number
+    confirmed_by: number | null
+    created_by_name: string | null
+    confirmed_by_name: string | null
+    items: StockTakingItem[]
+    total_books: number
+    completed_count: number
+    difference_count: number
+    created_at: string
+    updated_at: string
+    confirmed_at: string | null
+}
+
+export interface StockTakingListResponse {
+    total: number
+    page: number
+    page_size: number
+    items: StockTaking[]
+}
+
+export interface StockTakingCreate {
+    name: string
+    scope: string
+    person_in_charge?: string
+    remark?: string
+    book_ids: number[]
+}
+
+export interface StockTakingUpdate {
+    name?: string
+    scope?: string
+    person_in_charge?: string
+    remark?: string
+    book_ids?: number[]
+}
+
+export interface StockTakingItemUpdate {
+    item_id: number
+    actual_stock: number
+}
+
+export interface StockTakingBatchEntryRequest {
+    items: StockTakingItemUpdate[]
+}
+
+export interface StockTakingScopeOption {
+    value: string
+    label: string
+}

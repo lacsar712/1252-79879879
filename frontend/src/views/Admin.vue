@@ -495,6 +495,151 @@
           />
         </div>
       </el-tab-pane>
+
+      <el-tab-pane label="库存盘点" name="stock-taking">
+        <div class="admin-header">
+          <h1>库存盘点管理</h1>
+          <el-button type="primary" @click="handleAddStockTaking">
+            <el-icon><Plus /></el-icon>
+            创建盘点任务
+          </el-button>
+        </div>
+        
+        <div class="search-bar">
+          <el-input
+            v-model="stockTakingKeyword"
+            placeholder="搜索任务名称、编号..."
+            clearable
+            @keyup.enter="fetchStockTakings"
+            style="max-width: 300px"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-select
+            v-model="stockTakingStatus"
+            placeholder="任务状态"
+            clearable
+            @change="fetchStockTakings"
+            style="width: 150px"
+          >
+            <el-option label="草稿" value="draft" />
+            <el-option label="盘点中" value="in_progress" />
+            <el-option label="已确认" value="confirmed" />
+            <el-option label="已取消" value="cancelled" />
+          </el-select>
+          <el-button @click="fetchStockTakings">搜索</el-button>
+          <el-button type="success" @click="router.push('/admin/stock-taking-history')">
+            <el-icon><Clock /></el-icon>
+            历史记录
+          </el-button>
+        </div>
+        
+        <el-table
+          :data="stockTakings"
+          v-loading="loadingStockTakings"
+          stripe
+          style="width: 100%"
+        >
+          <el-table-column prop="id" label="ID" width="70" />
+          <el-table-column prop="task_no" label="任务编号" width="160" />
+          <el-table-column prop="name" label="任务名称" min-width="180" />
+          <el-table-column label="盘点范围" width="120">
+            <template #default="{ row }">
+              {{ getScopeText(row.scope) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getStockTakingStatusType(row.status)" size="small">
+                {{ getStockTakingStatusText(row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="盘点进度" width="140">
+            <template #default="{ row }">
+              <span>{{ row.completed_count }}/{{ row.total_books }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="差异数量" width="100" align="center">
+            <template #default="{ row }">
+              <el-badge
+                v-if="row.difference_count > 0"
+                :value="row.difference_count"
+                type="danger"
+                :max="99"
+              />
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="person_in_charge" label="负责人" width="100">
+            <template #default="{ row }">
+              {{ row.person_in_charge || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="created_by_name" label="创建人" width="100" />
+          <el-table-column prop="created_at" label="创建时间" width="180">
+            <template #default="{ row }">
+              {{ formatDate(row.created_at) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" @click="viewStockTakingDetail(row.id)">
+                查看
+              </el-button>
+              <el-button
+                v-if="row.status === 'draft'"
+                link
+                type="success"
+                @click="handleEditStockTaking(row)"
+              >
+                编辑
+              </el-button>
+              <el-dropdown
+                v-if="row.status === 'draft' || row.status === 'in_progress'"
+                trigger="click"
+                @command="(cmd: string) => handleStockTakingAction(row.id, cmd)"
+              >
+                <el-button link type="warning">
+                  更多
+                  <el-icon><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item
+                      v-if="row.status === 'draft'"
+                      command="start"
+                    >
+                      开始盘点
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="row.status === 'in_progress'"
+                      command="confirm"
+                    >
+                      确认盘点
+                    </el-dropdown-item>
+                    <el-dropdown-item command="cancel" divided>
+                      取消任务
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
+          </el-table-column>
+        </el-table>
+        
+        <div class="pagination">
+          <el-pagination
+            v-model:current-page="stockTakingPage"
+            v-model:page-size="stockTakingPageSize"
+            :total="totalStockTakings"
+            layout="total, prev, pager, next"
+            @current-change="fetchStockTakings"
+          />
+        </div>
+      </el-tab-pane>
     </el-tabs>
 
     <el-dialog
@@ -975,16 +1120,127 @@
         </div>
       </div>
     </el-dialog>
+
+    <el-dialog
+      v-model="stockTakingDialogVisible"
+      :title="isEditStockTaking ? '编辑盘点任务' : '创建盘点任务'"
+      width="800px"
+      destroy-on-close
+      class="stock-taking-dialog"
+    >
+      <el-form
+        ref="stockTakingFormRef"
+        :model="stockTakingForm"
+        :rules="stockTakingRules"
+        label-width="100px"
+      >
+        <el-form-item label="任务名称" prop="name">
+          <el-input v-model="stockTakingForm.name" placeholder="请输入任务名称" maxlength="200" show-word-limit />
+        </el-form-item>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="盘点范围" prop="scope">
+              <el-select v-model="stockTakingForm.scope" placeholder="请选择盘点范围" style="width: 100%">
+                <el-option
+                  v-for="scope in scopeOptions"
+                  :key="scope.value"
+                  :label="scope.label"
+                  :value="scope.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="负责人" prop="person_in_charge">
+              <el-input v-model="stockTakingForm.person_in_charge" placeholder="请输入负责人姓名" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-form-item label="备注" prop="remark">
+          <el-input
+            v-model="stockTakingForm.remark"
+            type="textarea"
+            :rows="2"
+            placeholder="请输入备注信息"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+        
+        <el-form-item label="盘点图书">
+          <div class="stock-taking-books">
+            <div class="books-header">
+              <el-input
+                v-model="stockTakingBookSearch"
+                placeholder="搜索图书..."
+                clearable
+                style="width: 260px"
+              >
+                <template #prefix>
+                  <el-icon><Search /></el-icon>
+                </template>
+              </el-input>
+              <span class="books-count">已选 {{ stockTakingForm.book_ids.length }} 本</span>
+            </div>
+            <div class="books-list">
+              <el-checkbox
+                v-model="selectAllBooks"
+                :indeterminate="isIndeterminate"
+                @change="handleSelectAllBooks"
+              >
+                全选
+              </el-checkbox>
+              <el-scrollbar height="300px">
+                <div class="books-grid">
+                    <el-checkbox
+                      v-for="book in filteredStockTakingBooks"
+                      :key="book.id"
+                      :label="book.id"
+                      v-model="stockTakingForm.book_ids"
+                      class="book-checkbox"
+                    >
+                      <div class="book-item">
+                        <img
+                          :src="book.cover_image || defaultCover"
+                          :alt="book.title"
+                          class="book-item-cover"
+                          @error="handleImageError"
+                        />
+                        <div class="book-item-info">
+                          <div class="book-item-title">{{ book.title }}</div>
+                          <div class="book-item-meta">
+                            <span>{{ book.author }}</span>
+                            <span class="book-item-stock">库存: {{ book.stock }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </el-checkbox>
+                </div>
+              </el-scrollbar>
+            </div>
+          </div>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="stockTakingDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submittingStockTaking" @click="handleSubmitStockTaking">
+          {{ isEditStockTaking ? '保存' : '创建' }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
-import type { Book, BookCreate, Promotion, PromotionCreate, Feedback, FeedbackTypeOption, FeedbackStatusOption, FeedbackReplySubmit, BookChapter, BookChapterCreate } from '@/types'
+import type { Book, BookCreate, Promotion, PromotionCreate, Feedback, FeedbackTypeOption, FeedbackStatusOption, FeedbackReplySubmit, BookChapter, BookChapterCreate, StockTaking, StockTakingCreate, StockTakingScopeOption } from '@/types'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Search, Picture, User, Clock, Phone, ShoppingCart, Collection, ChatDotRound, Promotion as PromotionIcon, Service, Edit, Check } from '@element-plus/icons-vue'
+import { Plus, Search, Picture, User, Clock, Phone, ShoppingCart, Collection, ChatDotRound, Promotion as PromotionIcon, Service, Edit, Check, ArrowDown } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -1101,6 +1357,49 @@ const chapterRules: FormRules = {
   content: [{ required: true, message: '请输入章节内容', trigger: 'blur' }]
 }
 
+const loadingStockTakings = ref(false)
+const submittingStockTaking = ref(false)
+const stockTakings = ref<StockTaking[]>([])
+const totalStockTakings = ref(0)
+const stockTakingPage = ref(1)
+const stockTakingPageSize = ref(10)
+const stockTakingKeyword = ref('')
+const stockTakingStatus = ref('')
+const stockTakingDialogVisible = ref(false)
+const isEditStockTaking = ref(false)
+const editingStockTakingId = ref<number | null>(null)
+const stockTakingFormRef = ref<FormInstance>()
+const stockTakingBookSearch = ref('')
+const scopeOptions = ref<StockTakingScopeOption[]>([])
+
+const stockTakingForm = reactive<StockTakingCreate>({
+  name: '',
+  scope: '',
+  person_in_charge: '',
+  remark: '',
+  book_ids: []
+})
+
+const stockTakingRules: FormRules = {
+  name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
+  scope: [{ required: true, message: '请选择盘点范围', trigger: 'change' }]
+}
+
+const selectAllBooks = ref(false)
+const isIndeterminate = computed(() => {
+  const count = stockTakingForm.book_ids.length
+  return count > 0 && count < allBooks.value.length
+})
+
+const filteredStockTakingBooks = computed(() => {
+  if (!stockTakingBookSearch.value) return allBooks.value
+  const keyword = stockTakingBookSearch.value.toLowerCase()
+  return allBooks.value.filter(book =>
+    book.title.toLowerCase().includes(keyword) ||
+    book.author.toLowerCase().includes(keyword)
+  )
+})
+
 const Refresh = { name: 'Refresh' }
 
 onMounted(async () => {
@@ -1116,6 +1415,14 @@ watch(activeTab, (newTab) => {
   }
   if (newTab === 'chapters' && allBooks.value.length === 0) {
     fetchAllBooks()
+  }
+  if (newTab === 'stock-taking') {
+    if (allBooks.value.length === 0) {
+      fetchAllBooks()
+    }
+    if (stockTakings.value.length === 0) {
+      Promise.all([fetchStockTakingScopes(), fetchStockTakings()])
+    }
   }
 })
 
@@ -1694,6 +2001,168 @@ function resetChapterForm() {
     is_public: true
   })
 }
+
+function getStockTakingStatusType(status: string): 'success' | 'warning' | 'info' | 'danger' {
+  switch (status) {
+    case 'draft': return 'info'
+    case 'in_progress': return 'warning'
+    case 'confirmed': return 'success'
+    case 'cancelled': return 'danger'
+    default: return 'info'
+  }
+}
+
+function getStockTakingStatusText(status: string): string {
+  switch (status) {
+    case 'draft': return '草稿'
+    case 'in_progress': return '盘点中'
+    case 'confirmed': return '已确认'
+    case 'cancelled': return '已取消'
+    default: return status
+  }
+}
+
+function getScopeText(scope: string): string {
+  const item = scopeOptions.value.find(s => s.value === scope)
+  return item?.label || scope
+}
+
+async function fetchStockTakingScopes() {
+  try {
+    scopeOptions.value = await api.getStockTakingScopes()
+  } catch (error) {
+    console.error('获取盘点范围失败:', error)
+  }
+}
+
+async function fetchStockTakings() {
+  loadingStockTakings.value = true
+  try {
+    const response = await api.getStockTakings({
+      page: stockTakingPage.value,
+      page_size: stockTakingPageSize.value,
+      status: stockTakingStatus.value || undefined,
+      keyword: stockTakingKeyword.value || undefined
+    })
+    stockTakings.value = response.items
+    totalStockTakings.value = response.total
+  } catch (error) {
+    console.error('获取盘点任务列表失败:', error)
+  } finally {
+    loadingStockTakings.value = false
+  }
+}
+
+function handleAddStockTaking() {
+  isEditStockTaking.value = false
+  editingStockTakingId.value = null
+  resetStockTakingForm()
+  stockTakingBookSearch.value = ''
+  selectAllBooks.value = false
+  stockTakingDialogVisible.value = true
+}
+
+function handleEditStockTaking(task: StockTaking) {
+  isEditStockTaking.value = true
+  editingStockTakingId.value = task.id
+  Object.assign(stockTakingForm, {
+    name: task.name,
+    scope: task.scope,
+    person_in_charge: task.person_in_charge || '',
+    remark: task.remark || '',
+    book_ids: task.items.map(item => item.book_id)
+  })
+  stockTakingBookSearch.value = ''
+  selectAllBooks.value = stockTakingForm.book_ids.length === allBooks.value.length && allBooks.value.length > 0
+  stockTakingDialogVisible.value = true
+}
+
+function handleSelectAllBooks(val: boolean) {
+  if (val) {
+    stockTakingForm.book_ids = allBooks.value.map(book => book.id)
+  } else {
+    stockTakingForm.book_ids = []
+  }
+}
+
+function viewStockTakingDetail(id: number) {
+  router.push(`/stock-taking/${id}`)
+}
+
+async function handleStockTakingAction(id: number, action: string) {
+  try {
+    if (action === 'start') {
+      await ElMessageBox.confirm(
+        '确认开始盘点吗？开始后任务状态将变为「盘点中」',
+        '确认操作',
+        { confirmButtonText: '确认开始', cancelButtonText: '取消', type: 'warning' }
+      )
+      await api.startStockTaking(id)
+      ElMessage.success('盘点已开始')
+    } else if (action === 'confirm') {
+      await ElMessageBox.confirm(
+        '确认完成盘点吗？确认后将不可修改。',
+        '确认盘点',
+        { confirmButtonText: '确认完成', cancelButtonText: '取消', type: 'warning' }
+      )
+      await api.confirmStockTaking(id)
+      ElMessage.success('盘点已确认，库存已更新')
+    } else if (action === 'cancel') {
+      await ElMessageBox.confirm(
+        '确认取消该盘点任务吗？取消后将不可恢复。',
+        '确认取消',
+        { confirmButtonText: '确认取消', cancelButtonText: '返回', type: 'error' }
+      )
+      await api.cancelStockTaking(id)
+      ElMessage.success('盘点已取消')
+    }
+    fetchStockTakings()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('操作失败:', error)
+    }
+  }
+}
+
+async function handleSubmitStockTaking() {
+  if (!stockTakingFormRef.value) return
+  
+  await stockTakingFormRef.value.validate(async (valid) => {
+    if (!valid) return
+    
+    if (stockTakingForm.book_ids.length === 0) {
+      ElMessage.warning('请至少选择一本盘点图书')
+      return
+    }
+    
+    submittingStockTaking.value = true
+    try {
+      if (isEditStockTaking.value && editingStockTakingId.value) {
+        await api.updateStockTaking(editingStockTakingId.value, stockTakingForm)
+        ElMessage.success('更新成功')
+      } else {
+        await api.createStockTaking(stockTakingForm)
+        ElMessage.success('创建成功')
+      }
+      stockTakingDialogVisible.value = false
+      fetchStockTakings()
+    } catch (error) {
+      console.error('操作失败:', error)
+    } finally {
+      submittingStockTaking.value = false
+    }
+  })
+}
+
+function resetStockTakingForm() {
+  Object.assign(stockTakingForm, {
+    name: '',
+    scope: '',
+    person_in_charge: '',
+    remark: '',
+    book_ids: []
+  })
+}
 </script>
 
 <style scoped>
@@ -2044,5 +2513,96 @@ function resetChapterForm() {
   white-space: pre-wrap;
   word-break: break-word;
   text-indent: 2em;
+}
+
+.stock-taking-books {
+  width: 100%;
+}
+
+.stock-taking-books .books-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.stock-taking-books .books-count {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.stock-taking-books .books-list {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--bg-secondary);
+}
+
+.stock-taking-books .books-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.book-checkbox {
+  margin: 0;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.book-checkbox:hover {
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.book-checkbox :deep(.el-checkbox__label) {
+  width: 100%;
+}
+
+.book-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.book-item-cover {
+  width: 40px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.book-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.book-item-title {
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.book-item-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.book-item-stock {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.stock-taking-dialog :deep(.el-dialog__body) {
+  max-height: 75vh;
+  overflow-y: auto;
 }
 </style>
