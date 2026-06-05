@@ -77,6 +77,18 @@ const routes: RouteRecordRaw[] = [
                 name: 'PurchaseOrderDetail',
                 component: () => import('@/views/PurchaseOrderDetail.vue'),
                 meta: { title: '采购单详情', requiresAdmin: true }
+            },
+            {
+                path: 'addresses',
+                name: 'AddressList',
+                component: () => import('@/views/AddressList.vue'),
+                meta: { title: '收货地址管理', requiresAuth: true }
+            },
+            {
+                path: 'order-confirm',
+                name: 'OrderConfirm',
+                component: () => import('@/views/OrderConfirm.vue'),
+                meta: { title: '确认订单', requiresAuth: true }
             }
         ]
     },

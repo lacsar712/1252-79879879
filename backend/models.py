@@ -227,3 +227,21 @@ class StockChange(Base):
     remark = Column(Text, nullable=True)
     created_by = Column(Integer, nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class UserAddress(Base):
+    """用户收货地址模型"""
+    __tablename__ = "user_addresses"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    contact_name = Column(String(50), nullable=False)
+    phone = Column(String(20), nullable=False, index=True)
+    province = Column(String(50), nullable=False)
+    city = Column(String(50), nullable=False)
+    district = Column(String(50), nullable=False)
+    detail_address = Column(String(500), nullable=False)
+    address_tag = Column(String(20), nullable=True)
+    is_default = Column(Boolean, default=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

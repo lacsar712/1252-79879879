@@ -450,3 +450,67 @@ export interface StockChange {
     remark: string | null
     created_at: string
 }
+
+export interface UserAddress {
+    id: number
+    user_id: number
+    contact_name: string
+    phone: string
+    province: string
+    city: string
+    district: string
+    detail_address: string
+    address_tag: string | null
+    is_default: boolean
+    full_address: string
+    created_at: string
+    updated_at: string
+}
+
+export interface UserAddressListResponse {
+    total: number
+    items: UserAddress[]
+}
+
+export interface UserAddressCreate {
+    contact_name: string
+    phone: string
+    province: string
+    city: string
+    district: string
+    detail_address: string
+    address_tag?: string | null
+    is_default: boolean
+}
+
+export interface UserAddressUpdate {
+    contact_name?: string
+    phone?: string
+    province?: string
+    city?: string
+    district?: string
+    detail_address?: string
+    address_tag?: string | null
+    is_default?: boolean
+}
+
+export interface UserAddressDeleteResponse {
+    message: string
+    need_reassign_default: boolean
+    remaining_addresses?: Array<{
+        id: number
+        contact_name: string
+        phone: string
+        full_address: string
+    }>
+}
+
+export interface UserAddressReassignDefaultRequest {
+    new_default_address_id: number
+}
+
+export interface AddressTagOption {
+    value: string
+    label: string
+    type: '' | 'success' | 'warning' | 'info' | 'danger' | 'primary'
+}

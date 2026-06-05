@@ -521,3 +521,60 @@ class PurchaseOrderStatusOption(BaseModel):
     value: str
     label: str
     type: str
+
+
+# ========== 用户地址相关 Schema ==========
+class UserAddressBase(BaseModel):
+    contact_name: str = Field(..., min_length=1, max_length=50)
+    phone: str = Field(..., min_length=11, max_length=20)
+    province: str = Field(..., min_length=1, max_length=50)
+    city: str = Field(..., min_length=1, max_length=50)
+    district: str = Field(..., min_length=1, max_length=50)
+    detail_address: str = Field(..., min_length=1, max_length=500)
+    address_tag: Optional[str] = Field(None, max_length=20)
+    is_default: bool = False
+
+
+class UserAddressCreate(UserAddressBase):
+    pass
+
+
+class UserAddressUpdate(BaseModel):
+    contact_name: Optional[str] = Field(None, min_length=1, max_length=50)
+    phone: Optional[str] = Field(None, min_length=11, max_length=20)
+    province: Optional[str] = Field(None, min_length=1, max_length=50)
+    city: Optional[str] = Field(None, min_length=1, max_length=50)
+    district: Optional[str] = Field(None, min_length=1, max_length=50)
+    detail_address: Optional[str] = Field(None, min_length=1, max_length=500)
+    address_tag: Optional[str] = Field(None, max_length=20)
+    is_default: Optional[bool] = None
+
+
+class UserAddressSetDefaultRequest(BaseModel):
+    pass
+
+
+class UserAddressDeleteResponse(BaseModel):
+    message: str
+    need_reassign_default: bool = False
+    remaining_addresses: Optional[List[dict]] = None
+
+
+class UserAddressReassignDefaultRequest(BaseModel):
+    new_default_address_id: int = Field(..., gt=0)
+
+
+class UserAddressResponse(UserAddressBase):
+    id: int
+    user_id: int
+    full_address: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UserAddressListResponse(BaseModel):
+    total: int
+    items: List[UserAddressResponse]

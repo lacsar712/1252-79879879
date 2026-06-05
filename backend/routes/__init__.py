@@ -9,5 +9,6 @@ from routes.feedbacks import router as feedbacks_router
 from routes.chapters import router as chapters_router
 from routes.stock_takings import router as stock_takings_router
 from routes.purchase_orders import router as purchase_orders_router
+from routes.addresses import router as addresses_router
 
-__all__ = ["auth_router", "books_router", "promotions_router", "feedbacks_router", "chapters_router", "stock_takings_router", "purchase_orders_router"]
+__all__ = ["auth_router", "books_router", "promotions_router", "feedbacks_router", "chapters_router", "stock_takings_router", "purchase_orders_router", "addresses_router"]

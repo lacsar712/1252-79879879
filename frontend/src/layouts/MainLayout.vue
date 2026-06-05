@@ -47,6 +47,10 @@
                     <el-icon><User /></el-icon>
                     {{ userStore.isAdmin ? '管理员' : '普通用户' }}
                   </el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/addresses')">
+                    <el-icon><Location /></el-icon>
+                    收货地址
+                  </el-dropdown-item>
                   <el-dropdown-item @click="router.push('/feedbacks')">
                     <el-icon><ChatDotRound /></el-icon>
                     我的反馈
@@ -101,7 +105,8 @@ import {
   User,
   SwitchButton,
   Service,
-  ChatDotRound
+  ChatDotRound,
+  Location
 } from '@element-plus/icons-vue'
 
 const router = useRouter()

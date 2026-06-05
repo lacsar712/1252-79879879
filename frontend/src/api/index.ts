@@ -11,7 +11,9 @@ import type {
     StockTakingBatchEntryRequest, StockTakingScopeOption,
     Supplier, SupplierListResponse, SupplierCreate, SupplierUpdate, SupplierOption,
     PurchaseOrder, PurchaseOrderListResponse, PurchaseOrderCreate, PurchaseOrderUpdate,
-    PurchaseOrderStatusOption, StockChange
+    PurchaseOrderStatusOption, StockChange,
+    UserAddress, UserAddressListResponse, UserAddressCreate, UserAddressUpdate,
+    UserAddressDeleteResponse, UserAddressReassignDefaultRequest, AddressTagOption
 } from '@/types'
 import { ElMessage } from 'element-plus'
 
@@ -277,5 +279,37 @@ export const api = {
         instance.get('/purchase-orders/statuses/list'),
 
     getPurchaseOrderStockChanges: (id: number): Promise<StockChange[]> =>
-        instance.get(`/purchase-orders/${id}/stock-changes`)
+        instance.get(`/purchase-orders/${id}/stock-changes`),
+
+    getAddresses: (): Promise<UserAddressListResponse> =>
+        instance.get('/addresses'),
+
+    getDefaultAddress: (): Promise<UserAddress> =>
+        instance.get('/addresses/default'),
+
+    getAddress: (id: number): Promise<UserAddress> =>
+        instance.get(`/addresses/${id}`),
+
+    createAddress: (address: UserAddressCreate): Promise<UserAddress> =>
+        instance.post('/addresses', address),
+
+    updateAddress: (id: number, address: UserAddressUpdate): Promise<UserAddress> =>
+        instance.put(`/addresses/${id}`, address),
+
+    setDefaultAddress: (id: number): Promise<UserAddress> =>
+        instance.patch(`/addresses/${id}/set-default`),
+
+    deleteAddress: (id: number): Promise<UserAddressDeleteResponse> =>
+        instance.delete(`/addresses/${id}`),
+
+    reassignDefaultAddress: (data: UserAddressReassignDefaultRequest): Promise<UserAddress> =>
+        instance.post('/addresses/reassign-default', data),
+
+    getAddressTags: (): Promise<AddressTagOption[]> =>
+        Promise.resolve([
+            { value: '家', label: '家', type: 'success' },
+            { value: '公司', label: '公司', type: 'primary' },
+            { value: '学校', label: '学校', type: 'warning' },
+            { value: '其他', label: '其他', type: 'info' }
+        ])
 }
