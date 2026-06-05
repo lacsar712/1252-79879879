@@ -8,7 +8,10 @@ import type {
     BookChapter, BookChapterPublic, BookChapterCreate, BookChapterUpdate,
     BookChapterListResponse, BookChapterPublicListResponse,
     StockTaking, StockTakingListResponse, StockTakingCreate, StockTakingUpdate,
-    StockTakingBatchEntryRequest, StockTakingScopeOption
+    StockTakingBatchEntryRequest, StockTakingScopeOption,
+    Supplier, SupplierListResponse, SupplierCreate, SupplierUpdate, SupplierOption,
+    PurchaseOrder, PurchaseOrderListResponse, PurchaseOrderCreate, PurchaseOrderUpdate,
+    PurchaseOrderStatusOption, StockChange
 } from '@/types'
 import { ElMessage } from 'element-plus'
 
@@ -215,5 +218,64 @@ export const api = {
         instance.post(`/stock-takings/${id}/cancel`),
 
     getStockTakingScopes: (): Promise<StockTakingScopeOption[]> =>
-        instance.get('/stock-takings/scopes/list')
+        instance.get('/stock-takings/scopes/list'),
+
+    // 供应商相关
+    getSuppliers: (params?: {
+        page?: number
+        page_size?: number
+        keyword?: string
+    }): Promise<SupplierListResponse> =>
+        instance.get('/purchase-orders/suppliers', { params }),
+
+    getAllSuppliers: (): Promise<SupplierOption[]> =>
+        instance.get('/purchase-orders/suppliers/all'),
+
+    getSupplier: (id: number): Promise<Supplier> =>
+        instance.get(`/purchase-orders/suppliers/${id}`),
+
+    createSupplier: (supplier: SupplierCreate): Promise<Supplier> =>
+        instance.post('/purchase-orders/suppliers', supplier),
+
+    updateSupplier: (id: number, supplier: SupplierUpdate): Promise<Supplier> =>
+        instance.put(`/purchase-orders/suppliers/${id}`, supplier),
+
+    deleteSupplier: (id: number): Promise<void> =>
+        instance.delete(`/purchase-orders/suppliers/${id}`),
+
+    // 采购单相关
+    getPurchaseOrders: (params?: {
+        page?: number
+        page_size?: number
+        status?: string
+        supplier_id?: number
+        keyword?: string
+        start_date?: string
+        end_date?: string
+    }): Promise<PurchaseOrderListResponse> =>
+        instance.get('/purchase-orders', { params }),
+
+    getPurchaseOrder: (id: number): Promise<PurchaseOrder> =>
+        instance.get(`/purchase-orders/${id}`),
+
+    createPurchaseOrder: (order: PurchaseOrderCreate): Promise<PurchaseOrder> =>
+        instance.post('/purchase-orders', order),
+
+    updatePurchaseOrder: (id: number, order: PurchaseOrderUpdate): Promise<PurchaseOrder> =>
+        instance.put(`/purchase-orders/${id}`, order),
+
+    submitPurchaseOrder: (id: number): Promise<PurchaseOrder> =>
+        instance.post(`/purchase-orders/${id}/submit`),
+
+    confirmPurchaseOrder: (id: number): Promise<PurchaseOrder> =>
+        instance.post(`/purchase-orders/${id}/confirm`),
+
+    cancelPurchaseOrder: (id: number): Promise<PurchaseOrder> =>
+        instance.post(`/purchase-orders/${id}/cancel`),
+
+    getPurchaseOrderStatuses: (): Promise<PurchaseOrderStatusOption[]> =>
+        instance.get('/purchase-orders/statuses/list'),
+
+    getPurchaseOrderStockChanges: (id: number): Promise<StockChange[]> =>
+        instance.get(`/purchase-orders/${id}/stock-changes`)
 }

@@ -640,6 +640,171 @@
           />
         </div>
       </el-tab-pane>
+
+      <el-tab-pane label="采购入库" name="purchase-orders">
+        <div class="admin-header">
+          <h1>采购入库管理</h1>
+          <el-button type="primary" @click="handleAddPurchaseOrder">
+            <el-icon><Plus /></el-icon>
+            创建采购单
+          </el-button>
+          <el-button type="success" @click="handleSupplierManagement">
+            <el-icon><UserFilled /></el-icon>
+            供应商管理
+          </el-button>
+        </div>
+        
+        <div class="search-bar">
+          <el-input
+            v-model="purchaseOrderKeyword"
+            placeholder="搜索采购单号、备注..."
+            clearable
+            @keyup.enter="fetchPurchaseOrders"
+            style="max-width: 300px"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-select
+            v-model="purchaseOrderStatus"
+            placeholder="状态筛选"
+            clearable
+            @change="fetchPurchaseOrders"
+            style="width: 150px"
+          >
+            <el-option
+              v-for="status in purchaseOrderStatusOptions"
+              :key="status.value"
+              :label="status.label"
+              :value="status.value"
+            />
+          </el-select>
+          <el-select
+            v-model="purchaseOrderSupplier"
+            placeholder="供应商筛选"
+            filterable
+            clearable
+            @change="fetchPurchaseOrders"
+            style="width: 200px"
+          >
+            <el-option
+              v-for="supplier in supplierOptions"
+              :key="supplier.id"
+              :label="supplier.name"
+              :value="supplier.id"
+            />
+          </el-select>
+          <el-date-picker
+            v-model="purchaseOrderDateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            @change="handlePurchaseOrderDateChange"
+            style="width: 280px"
+          />
+          <el-button @click="fetchPurchaseOrders">搜索</el-button>
+        </div>
+        
+        <el-table
+          :data="purchaseOrders"
+          v-loading="loadingPurchaseOrders"
+          stripe
+          style="width: 100%"
+        >
+          <el-table-column prop="id" label="ID" width="70" />
+          <el-table-column prop="order_no" label="采购单号" width="160" />
+          <el-table-column label="供应商" width="150">
+            <template #default="{ row }">
+              <span>{{ row.supplier?.name || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="采购日期" width="120">
+            <template #default="{ row }">
+              {{ formatDate(row.purchase_date, 'date') }}
+            </template>
+          </el-table-column>
+          <el-table-column label="总金额" width="120">
+            <template #default="{ row }">
+              <span class="price">¥{{ row.total_amount.toFixed(2) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getPurchaseOrderStatusType(row.status)" size="small">
+                {{ getPurchaseOrderStatusText(row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="明细项" width="80" align="center">
+            <template #default="{ row }">
+              <span>{{ row.items.length }} 项</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="created_by_name" label="创建人" width="100" />
+          <el-table-column prop="created_at" label="创建时间" width="180">
+            <template #default="{ row }">
+              {{ formatDate(row.created_at) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="220" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" @click="viewPurchaseOrderDetail(row.id)">
+                查看
+              </el-button>
+              <el-button
+                v-if="row.status === 'draft' || row.status === 'pending'"
+                link
+                type="success"
+                @click="handleEditPurchaseOrder(row)"
+              >
+                编辑
+              </el-button>
+              <el-dropdown
+                v-if="row.status !== 'received' && row.status !== 'cancelled'"
+                trigger="click"
+                @command="(cmd: string) => handlePurchaseOrderAction(row.id, cmd)"
+              >
+                <el-button link type="warning">
+                  更多
+                  <el-icon><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item
+                      v-if="row.status === 'draft'"
+                      command="submit"
+                    >
+                      提交待入库
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="row.status === 'pending'"
+                      command="confirm"
+                    >
+                      确认入库
+                    </el-dropdown-item>
+                    <el-dropdown-item command="cancel" divided>
+                      取消采购单
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
+          </el-table-column>
+        </el-table>
+        
+        <div class="pagination">
+          <el-pagination
+            v-model:current-page="purchaseOrderPage"
+            v-model:page-size="purchaseOrderPageSize"
+            :total="totalPurchaseOrders"
+            layout="total, prev, pager, next"
+            @current-change="fetchPurchaseOrders"
+          />
+        </div>
+      </el-tab-pane>
     </el-tabs>
 
     <el-dialog
@@ -1231,6 +1396,314 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="supplierDialogVisible"
+      title="供应商管理"
+      width="1000px"
+      destroy-on-close
+      class="supplier-dialog"
+    >
+      <div class="supplier-management">
+        <div class="supplier-toolbar">
+          <el-input
+            v-model="supplierSearch"
+            placeholder="搜索供应商..."
+            clearable
+            @keyup.enter="fetchSuppliers"
+            style="width: 300px"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-button type="primary" @click="handleAddSupplier">
+            <el-icon><Plus /></el-icon>
+            添加供应商
+          </el-button>
+        </div>
+        
+        <el-table
+          :data="suppliers"
+          v-loading="loadingSuppliers"
+          stripe
+          style="width: 100%"
+        >
+          <el-table-column prop="id" label="ID" width="70" />
+          <el-table-column prop="name" label="供应商名称" min-width="150" />
+          <el-table-column prop="contact_person" label="联系人" width="100">
+            <template #default="{ row }">
+              <span>{{ row.contact_person || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="phone" label="电话" width="120">
+            <template #default="{ row }">
+              <span>{{ row.phone || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="email" label="邮箱" width="150">
+            <template #default="{ row }">
+              <span>{{ row.email || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="address" label="地址" min-width="200">
+            <template #default="{ row }">
+              <span>{{ row.address || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="created_at" label="创建时间" width="180">
+            <template #default="{ row }">
+              {{ formatDate(row.created_at) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" @click="handleEditSupplier(row)">
+                编辑
+              </el-button>
+              <el-popconfirm
+                title="确定要删除此供应商吗？"
+                @confirm="handleDeleteSupplier(row.id)"
+              >
+                <template #reference>
+                  <el-button type="danger" link>删除</el-button>
+                </template>
+              </el-popconfirm>
+            </template>
+          </el-table-column>
+        </el-table>
+        
+        <div class="pagination">
+          <el-pagination
+            v-model:current-page="supplierPage"
+            v-model:page-size="supplierPageSize"
+            :total="totalSuppliers"
+            layout="total, prev, pager, next"
+            @current-change="fetchSuppliers"
+          />
+        </div>
+      </div>
+    </el-dialog>
+
+    <el-dialog
+      v-model="supplierFormDialogVisible"
+      :title="isEditSupplier ? '编辑供应商' : '添加供应商'"
+      width="600px"
+      destroy-on-close
+    >
+      <el-form
+        ref="supplierFormRef"
+        :model="supplierForm"
+        :rules="supplierRules"
+        label-width="80px"
+      >
+        <el-form-item label="供应商名称" prop="name">
+          <el-input v-model="supplierForm.name" placeholder="请输入供应商名称" maxlength="200" show-word-limit />
+        </el-form-item>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="联系人" prop="contact_person">
+              <el-input v-model="supplierForm.contact_person" placeholder="请输入联系人" maxlength="100" show-word-limit />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="电话" prop="phone">
+              <el-input v-model="supplierForm.phone" placeholder="请输入联系电话" maxlength="50" show-word-limit />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="supplierForm.email" placeholder="请输入邮箱" maxlength="100" show-word-limit />
+        </el-form-item>
+        
+        <el-form-item label="地址" prop="address">
+          <el-input v-model="supplierForm.address" placeholder="请输入地址" maxlength="500" show-word-limit />
+        </el-form-item>
+        
+        <el-form-item label="备注" prop="remark">
+          <el-input
+            v-model="supplierForm.remark"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入备注信息"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="supplierFormDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submittingSupplier" @click="handleSubmitSupplier">
+          {{ isEditSupplier ? '保存' : '添加' }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="purchaseOrderDialogVisible"
+      :title="isEditPurchaseOrder ? '编辑采购单' : '创建采购单'"
+      width="900px"
+      destroy-on-close
+      class="purchase-order-dialog"
+    >
+      <el-form
+        ref="purchaseOrderFormRef"
+        :model="purchaseOrderForm"
+        :rules="purchaseOrderRules"
+        label-width="100px"
+      >
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="供应商" prop="supplier_id">
+              <el-select
+                v-model="purchaseOrderForm.supplier_id"
+                placeholder="请选择供应商"
+                filterable
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="supplier in supplierOptions"
+                  :key="supplier.id"
+                  :label="supplier.name"
+                  :value="supplier.id"
+                >
+                  <span>{{ supplier.name }}</span>
+                  <span v-if="supplier.contact_person" style="color: #999; margin-left: 8px;">
+                    {{ supplier.contact_person }} - {{ supplier.phone || '' }}
+                  </span>
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="采购日期" prop="purchase_date">
+              <el-date-picker
+                v-model="purchaseOrderForm.purchase_date"
+                type="datetime"
+                placeholder="选择采购日期"
+                style="width: 100%"
+                value-format="YYYY-MM-DDTHH:mm:ss.sssZ"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-form-item label="备注" prop="remark">
+          <el-input
+            v-model="purchaseOrderForm.remark"
+            type="textarea"
+            :rows="2"
+            placeholder="请输入备注信息"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+        
+        <el-form-item label="采购明细">
+          <div class="purchase-order-items">
+            <div class="items-header">
+              <span class="items-title">采购图书列表</span>
+              <el-button type="primary" link @click="addPurchaseOrderItem">
+                <el-icon><Plus /></el-icon>
+                添加图书
+              </el-button>
+            </div>
+            
+            <el-table
+              :data="purchaseOrderForm.items"
+              border
+              style="width: 100%"
+            >
+              <el-table-column label="图书" min-width="200">
+                <template #default="{ row, $index }">
+                  <el-select
+                    v-model="row.book_id"
+                    placeholder="选择图书"
+                    filterable
+                    style="width: 100%"
+                    @change="handlePurchaseItemBookChange($index)"
+                  >
+                    <el-option
+                      v-for="book in allBooks"
+                      :key="book.id"
+                      :label="book.title"
+                      :value="book.id"
+                    >
+                      <span>{{ book.title }}</span>
+                      <span style="color: #999; margin-left: 8px;">作者: {{ book.author }}</span>
+                    </el-option>
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column label="采购数量" width="130">
+                <template #default="{ row }">
+                  <el-input-number
+                    v-model="row.quantity"
+                    :min="1"
+                    :precision="0"
+                    controls-position="right"
+                    style="width: 100%"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="采购单价" width="130">
+                <template #default="{ row }">
+                  <el-input-number
+                    v-model="row.unit_price"
+                    :min="0.01"
+                    :precision="2"
+                    controls-position="right"
+                    style="width: 100%"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="预计到货时间" width="180">
+                <template #default="{ row }">
+                  <el-date-picker
+                    v-model="row.expected_arrival_time"
+                    type="datetime"
+                    placeholder="选择到货时间"
+                    style="width: 100%"
+                    value-format="YYYY-MM-DDTHH:mm:ss.sssZ"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="小计" width="120">
+                <template #default="{ row }">
+                  <span class="price">¥{{ (row.quantity * row.unit_price).toFixed(2) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="80" align="center">
+                <template #default="{ $index }">
+                  <el-button
+                    type="danger"
+                    link
+                    @click="removePurchaseOrderItem($index)"
+                  >
+                    删除
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            
+            <div class="purchase-order-total">
+              <span class="total-label">合计金额：</span>
+              <span class="total-amount">¥{{ calculatePurchaseOrderTotal().toFixed(2) }}</span>
+            </div>
+          </div>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="purchaseOrderDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submittingPurchaseOrder" @click="handleSubmitPurchaseOrder">
+          {{ isEditPurchaseOrder ? '保存' : '创建' }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -1238,9 +1711,9 @@
 import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
-import type { Book, BookCreate, Promotion, PromotionCreate, Feedback, FeedbackTypeOption, FeedbackStatusOption, FeedbackReplySubmit, BookChapter, BookChapterCreate, StockTaking, StockTakingCreate, StockTakingScopeOption } from '@/types'
+import type { Book, BookCreate, Promotion, PromotionCreate, Feedback, FeedbackTypeOption, FeedbackStatusOption, FeedbackReplySubmit, BookChapter, BookChapterCreate, StockTaking, StockTakingCreate, StockTakingScopeOption, Supplier, SupplierCreate, PurchaseOrder, PurchaseOrderCreate, PurchaseOrderStatusOption, SupplierOption } from '@/types'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Search, Picture, User, Clock, Phone, ShoppingCart, Collection, ChatDotRound, Promotion as PromotionIcon, Service, Edit, Check, ArrowDown } from '@element-plus/icons-vue'
+import { Plus, Search, Picture, User, Clock, Phone, ShoppingCart, Collection, ChatDotRound, Promotion as PromotionIcon, Service, Edit, Check, ArrowDown, UserFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -1400,6 +1873,64 @@ const filteredStockTakingBooks = computed(() => {
   )
 })
 
+const loadingPurchaseOrders = ref(false)
+const submittingPurchaseOrder = ref(false)
+const purchaseOrders = ref<PurchaseOrder[]>([])
+const totalPurchaseOrders = ref(0)
+const purchaseOrderPage = ref(1)
+const purchaseOrderPageSize = ref(10)
+const purchaseOrderKeyword = ref('')
+const purchaseOrderStatus = ref('')
+const purchaseOrderSupplier = ref<number | undefined>(undefined)
+const purchaseOrderDateRange = ref<string[]>([])
+const purchaseOrderStartDate = ref('')
+const purchaseOrderEndDate = ref('')
+const purchaseOrderStatusOptions = ref<PurchaseOrderStatusOption[]>([])
+const purchaseOrderDialogVisible = ref(false)
+const isEditPurchaseOrder = ref(false)
+const editingPurchaseOrderId = ref<number | null>(null)
+const purchaseOrderFormRef = ref<FormInstance>()
+const supplierOptions = ref<SupplierOption[]>([])
+
+const purchaseOrderForm = reactive<PurchaseOrderCreate>({
+  supplier_id: 0,
+  purchase_date: '',
+  remark: '',
+  items: []
+})
+
+const purchaseOrderRules: FormRules = {
+  supplier_id: [{ required: true, message: '请选择供应商', trigger: 'change' }],
+  purchase_date: [{ required: true, message: '请选择采购日期', trigger: 'change' }],
+  items: [{ required: true, message: '请添加采购明细', trigger: 'change' }]
+}
+
+const loadingSuppliers = ref(false)
+const submittingSupplier = ref(false)
+const suppliers = ref<Supplier[]>([])
+const totalSuppliers = ref(0)
+const supplierPage = ref(1)
+const supplierPageSize = ref(10)
+const supplierSearch = ref('')
+const supplierDialogVisible = ref(false)
+const supplierFormDialogVisible = ref(false)
+const isEditSupplier = ref(false)
+const editingSupplierId = ref<number | null>(null)
+const supplierFormRef = ref<FormInstance>()
+
+const supplierForm = reactive<SupplierCreate>({
+  name: '',
+  contact_person: '',
+  phone: '',
+  email: '',
+  address: '',
+  remark: ''
+})
+
+const supplierRules: FormRules = {
+  name: [{ required: true, message: '请输入供应商名称', trigger: 'blur' }]
+}
+
 const Refresh = { name: 'Refresh' }
 
 onMounted(async () => {
@@ -1422,6 +1953,17 @@ watch(activeTab, (newTab) => {
     }
     if (stockTakings.value.length === 0) {
       Promise.all([fetchStockTakingScopes(), fetchStockTakings()])
+    }
+  }
+  if (newTab === 'purchase-orders') {
+    if (allBooks.value.length === 0) {
+      fetchAllBooks()
+    }
+    if (supplierOptions.value.length === 0) {
+      fetchAllSuppliers()
+    }
+    if (purchaseOrders.value.length === 0) {
+      Promise.all([fetchPurchaseOrderStatuses(), fetchPurchaseOrders()])
     }
   }
 })
@@ -1653,9 +2195,7 @@ function handleImageError(e: Event) {
   img.src = defaultCover
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('zh-CN')
-}
+
 
 function getStatusType(status: string) {
   switch (status) {
@@ -2162,6 +2702,322 @@ function resetStockTakingForm() {
     remark: '',
     book_ids: []
   })
+}
+
+function getPurchaseOrderStatusType(status: string): 'success' | 'warning' | 'info' | 'danger' {
+  switch (status) {
+    case 'draft': return 'info'
+    case 'pending': return 'warning'
+    case 'received': return 'success'
+    case 'cancelled': return 'danger'
+    default: return 'info'
+  }
+}
+
+function getPurchaseOrderStatusText(status: string): string {
+  switch (status) {
+    case 'draft': return '草稿'
+    case 'pending': return '待入库'
+    case 'received': return '已入库'
+    case 'cancelled': return '已取消'
+    default: return status
+  }
+}
+
+async function fetchAllSuppliers() {
+  try {
+    supplierOptions.value = await api.getAllSuppliers()
+  } catch (error) {
+    console.error('获取供应商列表失败:', error)
+  }
+}
+
+async function fetchPurchaseOrderStatuses() {
+  try {
+    purchaseOrderStatusOptions.value = await api.getPurchaseOrderStatuses()
+  } catch (error) {
+    console.error('获取采购单状态失败:', error)
+  }
+}
+
+async function fetchPurchaseOrders() {
+  loadingPurchaseOrders.value = true
+  try {
+    const response = await api.getPurchaseOrders({
+      page: purchaseOrderPage.value,
+      page_size: purchaseOrderPageSize.value,
+      status: purchaseOrderStatus.value || undefined,
+      supplier_id: purchaseOrderSupplier.value,
+      keyword: purchaseOrderKeyword.value || undefined,
+      start_date: purchaseOrderStartDate.value || undefined,
+      end_date: purchaseOrderEndDate.value || undefined
+    })
+    purchaseOrders.value = response.items
+    totalPurchaseOrders.value = response.total
+  } catch (error) {
+    console.error('获取采购单列表失败:', error)
+  } finally {
+    loadingPurchaseOrders.value = false
+  }
+}
+
+function handlePurchaseOrderDateChange(dates: string[]) {
+  if (dates && dates.length === 2) {
+    purchaseOrderStartDate.value = dates[0]
+    purchaseOrderEndDate.value = dates[1]
+  } else {
+    purchaseOrderStartDate.value = ''
+    purchaseOrderEndDate.value = ''
+  }
+  fetchPurchaseOrders()
+}
+
+function viewPurchaseOrderDetail(id: number) {
+  router.push(`/admin/purchase-order/${id}`)
+}
+
+function handleAddPurchaseOrder() {
+  if (supplierOptions.value.length === 0) {
+    fetchAllSuppliers()
+  }
+  isEditPurchaseOrder.value = false
+  editingPurchaseOrderId.value = null
+  resetPurchaseOrderForm()
+  purchaseOrderDialogVisible.value = true
+}
+
+function handleEditPurchaseOrder(row: PurchaseOrder) {
+  if (supplierOptions.value.length === 0) {
+    fetchAllSuppliers()
+  }
+  isEditPurchaseOrder.value = true
+  editingPurchaseOrderId.value = row.id
+  Object.assign(purchaseOrderForm, {
+    supplier_id: row.supplier_id,
+    purchase_date: row.purchase_date,
+    remark: row.remark || '',
+    items: row.items.map(item => ({
+      book_id: item.book_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      expected_arrival_time: item.expected_arrival_time || undefined
+    }))
+  })
+  purchaseOrderDialogVisible.value = true
+}
+
+async function handlePurchaseOrderAction(id: number, action: string) {
+  try {
+    if (action === 'submit') {
+      await ElMessageBox.confirm(
+        '确认提交该采购单吗？提交后状态将变为待入库。',
+        '确认提交',
+        { confirmButtonText: '确认提交', cancelButtonText: '返回', type: 'warning' }
+      )
+      await api.submitPurchaseOrder(id)
+      ElMessage.success('采购单已提交，状态变为待入库')
+    } else if (action === 'confirm') {
+      await ElMessageBox.confirm(
+        '确认入库该采购单吗？确认后将增加库存、记录成本并生成库存变动记录，不可重复确认。',
+        '确认入库',
+        { confirmButtonText: '确认入库', cancelButtonText: '返回', type: 'success' }
+      )
+      await api.confirmPurchaseOrder(id)
+      ElMessage.success('采购单已确认入库，库存已更新')
+    } else if (action === 'cancel') {
+      await ElMessageBox.confirm(
+        '确认取消该采购单吗？取消后将不可恢复。',
+        '确认取消',
+        { confirmButtonText: '确认取消', cancelButtonText: '返回', type: 'error' }
+      )
+      await api.cancelPurchaseOrder(id)
+      ElMessage.success('采购单已取消')
+    }
+    fetchPurchaseOrders()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('操作失败:', error)
+    }
+  }
+}
+
+function addPurchaseOrderItem() {
+  purchaseOrderForm.items.push({
+    book_id: 0,
+    quantity: 1,
+    unit_price: 0,
+    expected_arrival_time: undefined
+  })
+}
+
+function removePurchaseOrderItem(index: number) {
+  purchaseOrderForm.items.splice(index, 1)
+}
+
+function handlePurchaseItemBookChange(index: number) {
+  const item = purchaseOrderForm.items[index]
+  const book = allBooks.value.find(b => b.id === item.book_id)
+  if (book && item.unit_price === 0) {
+    item.unit_price = book.price
+  }
+}
+
+function calculatePurchaseOrderTotal(): number {
+  return purchaseOrderForm.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0)
+}
+
+async function handleSubmitPurchaseOrder() {
+  if (!purchaseOrderFormRef.value) return
+  
+  await purchaseOrderFormRef.value.validate(async (valid) => {
+    if (!valid) return
+    
+    if (purchaseOrderForm.items.length === 0) {
+      ElMessage.warning('请至少添加一条采购明细')
+      return
+    }
+    
+    const invalidItems = purchaseOrderForm.items.filter(item => item.book_id === 0 || item.quantity <= 0 || item.unit_price <= 0)
+    if (invalidItems.length > 0) {
+      ElMessage.warning('请完善所有采购明细信息')
+      return
+    }
+    
+    submittingPurchaseOrder.value = true
+    try {
+      if (isEditPurchaseOrder.value && editingPurchaseOrderId.value) {
+        await api.updatePurchaseOrder(editingPurchaseOrderId.value, purchaseOrderForm)
+        ElMessage.success('更新成功')
+      } else {
+        await api.createPurchaseOrder(purchaseOrderForm)
+        ElMessage.success('创建成功')
+      }
+      purchaseOrderDialogVisible.value = false
+      fetchPurchaseOrders()
+    } catch (error) {
+      console.error('操作失败:', error)
+    } finally {
+      submittingPurchaseOrder.value = false
+    }
+  })
+}
+
+function resetPurchaseOrderForm() {
+  Object.assign(purchaseOrderForm, {
+    supplier_id: 0,
+    purchase_date: '',
+    remark: '',
+    items: []
+  })
+}
+
+async function fetchSuppliers() {
+  loadingSuppliers.value = true
+  try {
+    const response = await api.getSuppliers({
+      page: supplierPage.value,
+      page_size: supplierPageSize.value,
+      keyword: supplierSearch.value || undefined
+    })
+    suppliers.value = response.items
+    totalSuppliers.value = response.total
+  } catch (error) {
+    console.error('获取供应商列表失败:', error)
+  } finally {
+    loadingSuppliers.value = false
+  }
+}
+
+function handleSupplierManagement() {
+  fetchSuppliers()
+  supplierDialogVisible.value = true
+}
+
+function handleAddSupplier() {
+  isEditSupplier.value = false
+  editingSupplierId.value = null
+  resetSupplierForm()
+  supplierFormDialogVisible.value = true
+}
+
+function handleEditSupplier(row: Supplier) {
+  isEditSupplier.value = true
+  editingSupplierId.value = row.id
+  Object.assign(supplierForm, {
+    name: row.name,
+    contact_person: row.contact_person || '',
+    phone: row.phone || '',
+    email: row.email || '',
+    address: row.address || '',
+    remark: row.remark || ''
+  })
+  supplierFormDialogVisible.value = true
+}
+
+async function handleDeleteSupplier(id: number) {
+  try {
+    await api.deleteSupplier(id)
+    ElMessage.success('删除成功')
+    fetchSuppliers()
+    fetchAllSuppliers()
+  } catch (error) {
+    console.error('删除失败:', error)
+  }
+}
+
+async function handleSubmitSupplier() {
+  if (!supplierFormRef.value) return
+  
+  await supplierFormRef.value.validate(async (valid) => {
+    if (!valid) return
+    
+    submittingSupplier.value = true
+    try {
+      if (isEditSupplier.value && editingSupplierId.value) {
+        await api.updateSupplier(editingSupplierId.value, supplierForm)
+        ElMessage.success('更新成功')
+      } else {
+        await api.createSupplier(supplierForm)
+        ElMessage.success('添加成功')
+      }
+      supplierFormDialogVisible.value = false
+      fetchSuppliers()
+      fetchAllSuppliers()
+    } catch (error) {
+      console.error('操作失败:', error)
+    } finally {
+      submittingSupplier.value = false
+    }
+  })
+}
+
+function resetSupplierForm() {
+  Object.assign(supplierForm, {
+    name: '',
+    contact_person: '',
+    phone: '',
+    email: '',
+    address: '',
+    remark: ''
+  })
+}
+
+function formatDate(date: string | Date, format: string = 'datetime'): string {
+  if (!date) return '-'
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return '-'
+  
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  const seconds = String(d.getSeconds()).padStart(2, '0')
+  
+  if (format === 'date') {
+    return `${year}-${month}-${day}`
+  }
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 </script>
 

@@ -71,6 +71,12 @@ const routes: RouteRecordRaw[] = [
                 name: 'StockTakingHistory',
                 component: () => import('@/views/StockTakingHistory.vue'),
                 meta: { title: '盘点历史记录', requiresAdmin: true }
+            },
+            {
+                path: 'purchase-order/:id',
+                name: 'PurchaseOrderDetail',
+                component: () => import('@/views/PurchaseOrderDetail.vue'),
+                meta: { title: '采购单详情', requiresAdmin: true }
             }
         ]
     },

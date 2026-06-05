@@ -159,3 +159,71 @@ class StockTakingItem(Base):
     difference = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Supplier(Base):
+    """供应商模型"""
+    __tablename__ = "suppliers"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(200), nullable=False, index=True)
+    contact_person = Column(String(100), nullable=True)
+    phone = Column(String(50), nullable=True)
+    email = Column(String(100), nullable=True)
+    address = Column(String(500), nullable=True)
+    remark = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PurchaseOrder(Base):
+    """采购单主表模型"""
+    __tablename__ = "purchase_orders"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    order_no = Column(String(50), unique=True, index=True, nullable=False)
+    supplier_id = Column(Integer, nullable=False, index=True)
+    purchase_date = Column(DateTime, nullable=False, index=True)
+    total_amount = Column(Float, nullable=False, default=0)
+    remark = Column(Text, nullable=True)
+    status = Column(String(20), nullable=False, default="draft", index=True)
+    created_by = Column(Integer, nullable=False, index=True)
+    confirmed_by = Column(Integer, nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    confirmed_at = Column(DateTime, nullable=True)
+
+
+class PurchaseOrderItem(Base):
+    """采购单明细表模型"""
+    __tablename__ = "purchase_order_items"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    purchase_order_id = Column(Integer, nullable=False, index=True)
+    book_id = Column(Integer, nullable=False, index=True)
+    quantity = Column(Integer, nullable=False, default=0)
+    unit_price = Column(Float, nullable=False, default=0)
+    expected_arrival_time = Column(DateTime, nullable=True)
+    received_quantity = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class StockChange(Base):
+    """库存变动记录表模型"""
+    __tablename__ = "stock_changes"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    book_id = Column(Integer, nullable=False, index=True)
+    change_type = Column(String(50), nullable=False, index=True)
+    change_quantity = Column(Integer, nullable=False, default=0)
+    before_stock = Column(Integer, nullable=False, default=0)
+    after_stock = Column(Integer, nullable=False, default=0)
+    related_order_id = Column(Integer, nullable=True, index=True)
+    related_order_no = Column(String(50), nullable=True, index=True)
+    related_order_type = Column(String(50), nullable=True, index=True)
+    unit_cost = Column(Float, nullable=True)
+    total_cost = Column(Float, nullable=True)
+    remark = Column(Text, nullable=True)
+    created_by = Column(Integer, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)

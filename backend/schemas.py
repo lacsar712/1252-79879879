@@ -395,3 +395,129 @@ class StockTakingBatchEntryRequest(BaseModel):
 
 class StockTakingConfirmRequest(BaseModel):
     pass
+
+
+# ========== 供应商相关 Schema ==========
+class SupplierBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    contact_person: Optional[str] = Field(None, max_length=100)
+    phone: Optional[str] = Field(None, max_length=50)
+    email: Optional[str] = Field(None, max_length=100)
+    address: Optional[str] = Field(None, max_length=500)
+    remark: Optional[str] = None
+
+
+class SupplierCreate(SupplierBase):
+    pass
+
+
+class SupplierUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    contact_person: Optional[str] = Field(None, max_length=100)
+    phone: Optional[str] = Field(None, max_length=50)
+    email: Optional[str] = Field(None, max_length=100)
+    address: Optional[str] = Field(None, max_length=500)
+    remark: Optional[str] = None
+
+
+class SupplierResponse(SupplierBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class SupplierListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[SupplierResponse]
+
+
+# ========== 采购单明细相关 Schema ==========
+class PurchaseOrderItemBase(BaseModel):
+    book_id: int = Field(..., gt=0)
+    quantity: int = Field(..., ge=1)
+    unit_price: float = Field(..., gt=0)
+    expected_arrival_time: Optional[datetime] = None
+
+
+class PurchaseOrderItemCreate(PurchaseOrderItemBase):
+    pass
+
+
+class PurchaseOrderItemUpdate(BaseModel):
+    book_id: Optional[int] = Field(None, gt=0)
+    quantity: Optional[int] = Field(None, ge=1)
+    unit_price: Optional[float] = Field(None, gt=0)
+    expected_arrival_time: Optional[datetime] = None
+
+
+class PurchaseOrderItemResponse(PurchaseOrderItemBase):
+    id: int
+    purchase_order_id: int
+    received_quantity: int
+    book: Optional[BookResponse] = None
+    subtotal: Optional[float] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ========== 采购单相关 Schema ==========
+class PurchaseOrderBase(BaseModel):
+    supplier_id: int = Field(..., gt=0)
+    purchase_date: datetime
+    remark: Optional[str] = None
+
+
+class PurchaseOrderCreate(PurchaseOrderBase):
+    items: List[PurchaseOrderItemCreate] = Field(..., min_length=1)
+
+
+class PurchaseOrderUpdate(BaseModel):
+    supplier_id: Optional[int] = Field(None, gt=0)
+    purchase_date: Optional[datetime] = None
+    remark: Optional[str] = None
+    items: Optional[List[PurchaseOrderItemCreate]] = Field(None, min_length=1)
+
+
+class PurchaseOrderResponse(PurchaseOrderBase):
+    id: int
+    order_no: str
+    total_amount: float
+    status: str
+    created_by: int
+    confirmed_by: Optional[int] = None
+    created_by_name: Optional[str] = None
+    confirmed_by_name: Optional[str] = None
+    supplier: Optional[SupplierResponse] = None
+    items: List[PurchaseOrderItemResponse] = Field(default_factory=list)
+    stock_impact: Optional[List[dict]] = None
+    created_at: datetime
+    updated_at: datetime
+    confirmed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class PurchaseOrderListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[PurchaseOrderResponse]
+
+
+class PurchaseOrderConfirmRequest(BaseModel):
+    pass
+
+
+class PurchaseOrderStatusOption(BaseModel):
+    value: str
+    label: str
+    type: str

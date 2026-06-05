@@ -318,3 +318,135 @@ export interface StockTakingScopeOption {
     value: string
     label: string
 }
+
+export interface Supplier {
+    id: number
+    name: string
+    contact_person: string | null
+    phone: string | null
+    email: string | null
+    address: string | null
+    remark: string | null
+    created_at: string
+    updated_at: string
+}
+
+export interface SupplierListResponse {
+    total: number
+    page: number
+    page_size: number
+    items: Supplier[]
+}
+
+export interface SupplierCreate {
+    name: string
+    contact_person?: string
+    phone?: string
+    email?: string
+    address?: string
+    remark?: string
+}
+
+export interface SupplierUpdate {
+    name?: string
+    contact_person?: string
+    phone?: string
+    email?: string
+    address?: string
+    remark?: string
+}
+
+export interface SupplierOption {
+    id: number
+    name: string
+    contact_person: string | null
+    phone: string | null
+}
+
+export interface PurchaseOrderItem {
+    id: number
+    purchase_order_id: number
+    book_id: number
+    quantity: number
+    unit_price: number
+    expected_arrival_time: string | null
+    received_quantity: number
+    book: Book | null
+    subtotal: number
+    created_at: string
+    updated_at: string
+}
+
+export interface PurchaseOrderItemCreate {
+    book_id: number
+    quantity: number
+    unit_price: number
+    expected_arrival_time?: string
+}
+
+export interface PurchaseOrder {
+    id: number
+    order_no: string
+    supplier_id: number
+    purchase_date: string
+    total_amount: number
+    remark: string | null
+    status: 'draft' | 'pending' | 'received' | 'cancelled'
+    created_by: number
+    confirmed_by: number | null
+    created_by_name: string | null
+    confirmed_by_name: string | null
+    supplier: Supplier | null
+    items: PurchaseOrderItem[]
+    stock_impact: Array<{
+        book_id: number
+        book_title: string
+        added_quantity: number
+        unit_cost: number
+        total_cost: number
+    }> | null
+    created_at: string
+    updated_at: string
+    confirmed_at: string | null
+}
+
+export interface PurchaseOrderListResponse {
+    total: number
+    page: number
+    page_size: number
+    items: PurchaseOrder[]
+}
+
+export interface PurchaseOrderCreate {
+    supplier_id: number
+    purchase_date: string
+    remark?: string
+    items: PurchaseOrderItemCreate[]
+}
+
+export interface PurchaseOrderUpdate {
+    supplier_id?: number
+    purchase_date?: string
+    remark?: string
+    items?: PurchaseOrderItemCreate[]
+}
+
+export interface PurchaseOrderStatusOption {
+    value: string
+    label: string
+    type: string
+}
+
+export interface StockChange {
+    id: number
+    book_id: number
+    book_title: string
+    change_type: string
+    change_quantity: number
+    before_stock: number
+    after_stock: number
+    unit_cost: number | null
+    total_cost: number | null
+    remark: string | null
+    created_at: string
+}
