@@ -41,6 +41,18 @@ const routes: RouteRecordRaw[] = [
                 name: 'Admin',
                 component: () => import('@/views/Admin.vue'),
                 meta: { title: '后台管理', requiresAdmin: true }
+            },
+            {
+                path: 'feedback/submit',
+                name: 'FeedbackSubmit',
+                component: () => import('@/views/FeedbackSubmit.vue'),
+                meta: { title: '提交反馈', requiresAuth: true }
+            },
+            {
+                path: 'feedbacks',
+                name: 'FeedbackList',
+                component: () => import('@/views/FeedbackList.vue'),
+                meta: { title: '我的反馈', requiresAuth: true }
             }
         ]
     },
@@ -76,6 +88,14 @@ router.beforeEach((to, _from, next) => {
             next({ name: 'Login', query: { redirect: to.fullPath } })
         } else if (!userStore.isAdmin) {
             next({ name: 'Home' })
+        } else {
+            next()
+        }
+    }
+    // 需要登录的页面
+    else if (to.meta.requiresAuth) {
+        if (!userStore.isLoggedIn) {
+            next({ name: 'Login', query: { redirect: to.fullPath } })
         } else {
             next()
         }

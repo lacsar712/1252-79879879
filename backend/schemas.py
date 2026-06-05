@@ -163,3 +163,101 @@ class PromotionListResponse(BaseModel):
 class PromotionStockDeductRequest(BaseModel):
     promotion_book_id: int = Field(..., gt=0)
     quantity: int = Field(..., ge=1)
+
+
+# ========== 客服反馈相关 Schema ==========
+class FeedbackAttachmentBase(BaseModel):
+    file_name: str
+    file_path: str
+    file_size: Optional[int] = None
+    file_type: Optional[str] = None
+
+
+class FeedbackAttachmentCreate(FeedbackAttachmentBase):
+    pass
+
+
+class FeedbackAttachmentResponse(FeedbackAttachmentBase):
+    id: int
+    feedback_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class FeedbackReplyBase(BaseModel):
+    content: str = Field(..., min_length=1)
+
+
+class FeedbackReplyCreate(FeedbackReplyBase):
+    is_internal: bool = False
+    status_change: Optional[str] = None
+
+
+class FeedbackReplyResponse(FeedbackReplyBase):
+    id: int
+    feedback_id: int
+    replier_id: int
+    replier_type: str
+    is_internal: bool
+    status_change: Optional[str] = None
+    replier_name: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class FeedbackBase(BaseModel):
+    type: str = Field(..., min_length=1, max_length=50)
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(..., min_length=1)
+    contact_info: Optional[str] = Field(None, max_length=200)
+    related_order_id: Optional[str] = Field(None, max_length=100)
+    related_book_id: Optional[int] = None
+
+
+class FeedbackCreate(FeedbackBase):
+    attachments: List[FeedbackAttachmentCreate] = Field(default_factory=list)
+
+
+class FeedbackUpdate(BaseModel):
+    status: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+
+class FeedbackResponse(FeedbackBase):
+    id: int
+    user_id: int
+    status: str
+    username: Optional[str] = None
+    related_book: Optional[BookResponse] = None
+    attachments: List[FeedbackAttachmentResponse] = Field(default_factory=list)
+    replies: List[FeedbackReplyResponse] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class FeedbackListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[FeedbackResponse]
+
+
+class FeedbackReplySubmit(BaseModel):
+    content: str = Field(..., min_length=1)
+    is_internal: bool = False
+    status_change: Optional[str] = None
+
+
+class FeedbackUploadResponse(BaseModel):
+    file_name: str
+    file_path: str
+    file_size: int
+    file_type: str

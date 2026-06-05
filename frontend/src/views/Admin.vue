@@ -214,6 +214,178 @@
           />
         </div>
       </el-tab-pane>
+
+      <el-tab-pane label="客服反馈" name="feedbacks">
+        <div class="admin-header">
+          <h1>客服反馈管理</h1>
+        </div>
+
+        <div class="search-bar">
+          <el-input
+            v-model="feedbackKeyword"
+            placeholder="搜索标题、描述、订单号..."
+            clearable
+            @keyup.enter="fetchFeedbacks"
+            style="max-width: 300px"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-select
+            v-model="feedbackStatusFilter"
+            placeholder="处理状态"
+            clearable
+            @change="fetchFeedbacks"
+            style="width: 150px"
+          >
+            <el-option
+              v-for="item in feedbackStatusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+          <el-select
+            v-model="feedbackTypeFilter"
+            placeholder="问题类型"
+            clearable
+            @change="fetchFeedbacks"
+            style="width: 150px"
+          >
+            <el-option
+              v-for="item in feedbackTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+          <el-date-picker
+            v-model="feedbackDateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            @change="handleFeedbackDateChange"
+            style="width: 280px"
+          />
+          <el-button @click="resetFeedbackFilters">
+            <el-icon><Refresh /></el-icon>
+            重置
+          </el-button>
+        </div>
+
+        <el-table
+          :data="feedbacks"
+          v-loading="loadingFeedbacks"
+          stripe
+          style="width: 100%"
+        >
+          <el-table-column prop="id" label="ID" width="70" />
+          <el-table-column label="用户" width="120">
+            <template #default="{ row }">
+              <div class="user-info-cell">
+                <el-avatar :size="32" class="user-avatar-small">
+                  {{ row.username?.charAt(0).toUpperCase() }}
+                </el-avatar>
+                <span class="username-text">{{ row.username }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="title" label="标题" min-width="200">
+            <template #default="{ row }">
+              <div class="feedback-title">
+                <el-tag :type="getFeedbackTypeTagType(row.type)" size="small" class="type-tag">
+                  {{ getFeedbackTypeText(row.type) }}
+                </el-tag>
+                <span class="title-text">{{ row.title }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getFeedbackStatusTagType(row.status)" size="small">
+                {{ getFeedbackStatusText(row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="关联信息" width="180">
+            <template #default="{ row }">
+              <div class="related-info">
+                <span v-if="row.related_order_id" class="related-item">
+                  <el-icon><ShoppingCart /></el-icon>
+                  订单: {{ row.related_order_id }}
+                </span>
+                <span v-if="row.related_book" class="related-item">
+                  <el-icon><Collection /></el-icon>
+                  图书: {{ row.related_book.title }}
+                </span>
+                <span v-if="!row.related_order_id && !row.related_book" class="no-related">
+                  -
+                </span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="附件" width="80" align="center">
+            <template #default="{ row }">
+              <span v-if="row.attachments.length > 0" class="attachment-count">
+                <el-icon><Picture /></el-icon>
+                {{ row.attachments.length }}
+              </span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="回复数" width="80" align="center">
+            <template #default="{ row }">
+              <el-badge :value="getPublicReplyCount(row)" :max="99" />
+              <el-badge
+                v-if="getInternalReplyCount(row) > 0"
+                :value="getInternalReplyCount(row)"
+                :max="99"
+                class="internal-badge"
+                type="warning"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column prop="created_at" label="提交时间" width="180">
+            <template #default="{ row }">
+              {{ formatDate(row.created_at) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" @click="viewFeedbackDetail(row.id)">
+                <el-icon><Edit /></el-icon>
+                处理
+              </el-button>
+              <el-dropdown trigger="click" @command="(cmd: string) => handleQuickStatusChange(row.id, cmd)">
+                <el-button link type="success">
+                  <el-icon><Check /></el-icon>
+                  改状态
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="processing">处理中</el-dropdown-item>
+                    <el-dropdown-item command="replied">已回复</el-dropdown-item>
+                    <el-dropdown-item command="closed">已关闭</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="pagination">
+          <el-pagination
+            v-model:current-page="feedbackPage"
+            v-model:page-size="feedbackPageSize"
+            :total="totalFeedbacks"
+            layout="total, prev, pager, next"
+            @current-change="fetchFeedbacks"
+          />
+        </div>
+      </el-tab-pane>
     </el-tabs>
 
     <el-dialog
@@ -429,6 +601,187 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="feedbackDetailVisible"
+      title="反馈处理"
+      width="950px"
+      destroy-on-close
+      class="feedback-admin-dialog"
+    >
+      <div v-if="currentFeedback" class="feedback-detail-admin">
+        <div class="detail-header">
+          <div class="detail-title">
+            <el-tag :type="getFeedbackTypeTagType(currentFeedback.type)" size="large" class="type-tag">
+              {{ getFeedbackTypeText(currentFeedback.type) }}
+            </el-tag>
+            <h2>{{ currentFeedback.title }}</h2>
+          </div>
+          <div class="status-actions">
+            <el-select
+              v-model="selectedStatus"
+              size="large"
+              @change="handleStatusChange"
+              style="width: 140px"
+            >
+              <el-option
+                v-for="item in feedbackStatusOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </div>
+        </div>
+
+        <div class="detail-meta">
+          <span class="meta-item">
+            <el-icon><User /></el-icon>
+            {{ currentFeedback.username }}
+          </span>
+          <span class="meta-item">
+            <el-icon><Clock /></el-icon>
+            {{ formatDate(currentFeedback.created_at) }}
+          </span>
+          <span v-if="currentFeedback.contact_info" class="meta-item">
+            <el-icon><Phone /></el-icon>
+            {{ currentFeedback.contact_info }}
+          </span>
+          <span v-if="currentFeedback.related_order_id" class="meta-item">
+            <el-icon><ShoppingCart /></el-icon>
+            订单: {{ currentFeedback.related_order_id }}
+          </span>
+          <span v-if="currentFeedback.related_book" class="meta-item">
+            <el-icon><Collection /></el-icon>
+            图书: {{ currentFeedback.related_book.title }}
+          </span>
+        </div>
+
+        <div class="detail-section">
+          <h3>问题描述</h3>
+          <p class="description-text">{{ currentFeedback.description }}</p>
+        </div>
+
+        <div v-if="currentFeedback.attachments.length > 0" class="detail-section">
+          <h3>
+            <el-icon><Picture /></el-icon>
+            图片附件 ({{ currentFeedback.attachments.length }})
+          </h3>
+          <div class="attachment-list">
+            <div
+              v-for="att in currentFeedback.attachments"
+              :key="att.id"
+              class="attachment-item"
+              @click="previewFeedbackImage(att.file_path)"
+            >
+              <img :src="att.file_path" :alt="att.file_name" />
+              <div class="attachment-name">{{ att.file_name }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>
+            <el-icon><ChatDotRound /></el-icon>
+            回复记录 ({{ currentFeedback.replies.length }})
+          </h3>
+          <div v-if="currentFeedback.replies.length > 0" class="timeline">
+            <el-timeline>
+              <el-timeline-item
+                v-for="reply in currentFeedback.replies"
+                :key="reply.id"
+                :timestamp="formatDate(reply.created_at)"
+                :type="reply.replier_type === 'admin' ? 'primary' : 'success'"
+                :hollow="reply.is_internal"
+              >
+                <div
+                  class="reply-item"
+                  :class="{
+                    'is-admin': reply.replier_type === 'admin',
+                    'is-internal': reply.is_internal
+                  }"
+                >
+                  <div class="reply-header">
+                    <el-tag
+                      :type="reply.is_internal ? 'warning' : (reply.replier_type === 'admin' ? 'primary' : 'success')"
+                      size="small"
+                    >
+                      {{ reply.is_internal ? '内部备注' : (reply.replier_type === 'admin' ? '客服' : '用户') }}
+                    </el-tag>
+                    <span class="replier-name">{{ reply.replier_name }}</span>
+                    <el-tag
+                      v-if="reply.status_change"
+                      type="warning"
+                      size="small"
+                      effect="light"
+                    >
+                      状态变更: {{ getFeedbackStatusText(reply.status_change) }}
+                    </el-tag>
+                  </div>
+                  <div class="reply-content">{{ reply.content }}</div>
+                </div>
+              </el-timeline-item>
+            </el-timeline>
+          </div>
+          <el-empty v-else description="暂无回复记录" :image-size="100" />
+        </div>
+
+        <div class="reply-section">
+          <div class="reply-options">
+            <el-radio-group v-model="replyType" size="default">
+              <el-radio-button value="public">
+                <el-icon><Service /></el-icon>
+                公开回复
+              </el-radio-button>
+              <el-radio-button value="internal">
+                <el-icon><Edit /></el-icon>
+                内部备注
+              </el-radio-button>
+            </el-radio-group>
+            <el-select
+              v-if="replyType === 'public'"
+              v-model="replyStatusChange"
+              placeholder="可选：变更状态"
+              clearable
+              style="width: 160px"
+            >
+              <el-option
+                v-for="item in feedbackStatusOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </div>
+          <el-input
+            v-model="adminReplyContent"
+            type="textarea"
+            :rows="4"
+            :placeholder="replyType === 'internal' ? '输入内部备注内容（仅客服可见）...' : '输入回复内容（用户可见）...'"
+            maxlength="2000"
+            show-word-limit
+          />
+          <div class="reply-actions">
+            <el-button
+              type="primary"
+              :loading="submittingAdminReply"
+              :disabled="!adminReplyContent.trim()"
+              @click="submitAdminReply"
+            >
+              <el-icon><PromotionIcon /></el-icon>
+              {{ replyType === 'internal' ? '提交备注' : '发送回复' }}
+            </el-button>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+
+    <el-image-viewer
+      v-if="feedbackPreviewVisible"
+      :url-list="feedbackPreviewImages"
+      :initial-index="feedbackPreviewIndex"
+      @close="feedbackPreviewVisible = false"
+    />
   </div>
 </template>
 
@@ -436,9 +789,9 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
-import type { Book, BookCreate, Promotion, PromotionCreate } from '@/types'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Search } from '@element-plus/icons-vue'
+import type { Book, BookCreate, Promotion, PromotionCreate, Feedback, FeedbackTypeOption, FeedbackStatusOption, FeedbackReplySubmit } from '@/types'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { Plus, Search, Picture, User, Clock, Phone, ShoppingCart, Collection, ChatDotRound, Promotion as PromotionIcon, Service, Edit, Check } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -505,6 +858,34 @@ const promotionRules: FormRules = {
   end_time: [{ required: true, message: '请选择结束时间', trigger: 'change' }]
 }
 
+const loadingFeedbacks = ref(false)
+const feedbacks = ref<Feedback[]>([])
+const totalFeedbacks = ref(0)
+const feedbackPage = ref(1)
+const feedbackPageSize = ref(10)
+const feedbackKeyword = ref('')
+const feedbackStatusFilter = ref('')
+const feedbackTypeFilter = ref('')
+const feedbackDateRange = ref<string[]>([])
+const feedbackStartDate = ref('')
+const feedbackEndDate = ref('')
+const feedbackTypeOptions = ref<FeedbackTypeOption[]>([])
+const feedbackStatusOptions = ref<FeedbackStatusOption[]>([])
+
+const feedbackDetailVisible = ref(false)
+const currentFeedback = ref<Feedback | null>(null)
+const selectedStatus = ref('')
+const adminReplyContent = ref('')
+const replyType = ref<'public' | 'internal'>('public')
+const replyStatusChange = ref('')
+const submittingAdminReply = ref(false)
+
+const feedbackPreviewVisible = ref(false)
+const feedbackPreviewImages = ref<string[]>([])
+const feedbackPreviewIndex = ref(0)
+
+const Refresh = { name: 'Refresh' }
+
 onMounted(async () => {
   await Promise.all([fetchBooks(), fetchAllBooks()])
 })
@@ -512,6 +893,9 @@ onMounted(async () => {
 watch(activeTab, (newTab) => {
   if (newTab === 'promotions' && promotions.value.length === 0) {
     fetchPromotions()
+  }
+  if (newTab === 'feedbacks' && feedbacks.value.length === 0) {
+    Promise.all([fetchFeedbackTypes(), fetchFeedbackStatuses(), fetchFeedbacks()])
   }
 })
 
@@ -763,6 +1147,208 @@ function getStatusText(status: string) {
     default: return status
   }
 }
+
+async function fetchFeedbackTypes() {
+  try {
+    feedbackTypeOptions.value = await api.getFeedbackTypes()
+  } catch (error) {
+    console.error('获取反馈类型失败:', error)
+  }
+}
+
+async function fetchFeedbackStatuses() {
+  try {
+    feedbackStatusOptions.value = await api.getFeedbackStatuses()
+  } catch (error) {
+    console.error('获取状态列表失败:', error)
+  }
+}
+
+async function fetchFeedbacks() {
+  loadingFeedbacks.value = true
+  try {
+    const response = await api.getAllFeedbacks({
+      page: feedbackPage.value,
+      page_size: feedbackPageSize.value,
+      status: feedbackStatusFilter.value || undefined,
+      type: feedbackTypeFilter.value || undefined,
+      start_date: feedbackStartDate.value || undefined,
+      end_date: feedbackEndDate.value || undefined,
+      keyword: feedbackKeyword.value || undefined
+    })
+    feedbacks.value = response.items
+    totalFeedbacks.value = response.total
+  } catch (error) {
+    console.error('获取反馈列表失败:', error)
+  } finally {
+    loadingFeedbacks.value = false
+  }
+}
+
+function handleFeedbackDateChange(val: string[] | null) {
+  if (val && val.length === 2) {
+    feedbackStartDate.value = val[0]
+    feedbackEndDate.value = val[1]
+  } else {
+    feedbackStartDate.value = ''
+    feedbackEndDate.value = ''
+  }
+  fetchFeedbacks()
+}
+
+function resetFeedbackFilters() {
+  feedbackKeyword.value = ''
+  feedbackStatusFilter.value = ''
+  feedbackTypeFilter.value = ''
+  feedbackDateRange.value = []
+  feedbackStartDate.value = ''
+  feedbackEndDate.value = ''
+  feedbackPage.value = 1
+  fetchFeedbacks()
+}
+
+async function viewFeedbackDetail(id: number) {
+  try {
+    currentFeedback.value = await api.getFeedback(id)
+    selectedStatus.value = currentFeedback.value.status
+    adminReplyContent.value = ''
+    replyType.value = 'public'
+    replyStatusChange.value = ''
+    feedbackDetailVisible.value = true
+  } catch (error) {
+    console.error('获取反馈详情失败:', error)
+    ElMessage.error('获取反馈详情失败')
+  }
+}
+
+async function handleQuickStatusChange(id: number, status: string) {
+  try {
+    await ElMessageBox.confirm(
+      `确认将反馈状态变更为「${getFeedbackStatusText(status)}」吗？`,
+      '确认操作',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    await api.updateFeedbackStatus(id, status)
+    ElMessage.success('状态更新成功')
+    fetchFeedbacks()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('更新状态失败:', error)
+      ElMessage.error('更新状态失败')
+    }
+  }
+}
+
+async function handleStatusChange(newStatus: string) {
+  if (!currentFeedback.value) return
+
+  try {
+    await ElMessageBox.confirm(
+      `确认将反馈状态变更为「${getFeedbackStatusText(newStatus)}」吗？`,
+      '确认操作',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    const updated = await api.updateFeedbackStatus(currentFeedback.value.id, newStatus)
+    currentFeedback.value = updated
+    selectedStatus.value = newStatus
+    ElMessage.success('状态更新成功')
+    fetchFeedbacks()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('更新状态失败:', error)
+      ElMessage.error('更新状态失败')
+      selectedStatus.value = currentFeedback.value.status
+    } else {
+      selectedStatus.value = currentFeedback.value.status
+    }
+  }
+}
+
+async function submitAdminReply() {
+  if (!currentFeedback.value || !adminReplyContent.value.trim()) return
+
+  submittingAdminReply.value = true
+  try {
+    const replyData: FeedbackReplySubmit = {
+      content: adminReplyContent.value.trim(),
+      is_internal: replyType.value === 'internal',
+      status_change: replyType.value === 'public' && replyStatusChange.value ? replyStatusChange.value : undefined
+    }
+
+    const newReply = await api.adminReplyFeedback(currentFeedback.value.id, replyData)
+    currentFeedback.value.replies.push(newReply)
+
+    if (newReply.status_change) {
+      currentFeedback.value.status = newReply.status_change as Feedback['status']
+      selectedStatus.value = newReply.status_change
+    }
+
+    adminReplyContent.value = ''
+    replyStatusChange.value = ''
+    ElMessage.success(replyType.value === 'internal' ? '备注添加成功' : '回复发送成功')
+    fetchFeedbacks()
+  } catch (error) {
+    console.error('操作失败:', error)
+    ElMessage.error('操作失败')
+  } finally {
+    submittingAdminReply.value = false
+  }
+}
+
+function previewFeedbackImage(url: string) {
+  if (currentFeedback.value) {
+    feedbackPreviewImages.value = currentFeedback.value.attachments.map(a => a.file_path)
+    feedbackPreviewIndex.value = feedbackPreviewImages.value.indexOf(url)
+    feedbackPreviewVisible.value = true
+  }
+}
+
+function getFeedbackTypeText(type: string): string {
+  const item = feedbackTypeOptions.value.find(t => t.value === type)
+  return item?.label || type
+}
+
+function getFeedbackStatusText(status: string): string {
+  const item = feedbackStatusOptions.value.find(s => s.value === status)
+  return item?.label || status
+}
+
+function getFeedbackTypeTagType(type: string): 'primary' | 'success' | 'warning' | 'danger' | 'info' {
+  const typeMap: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info'> = {
+    product: 'primary',
+    order: 'success',
+    account: 'warning',
+    payment: 'danger',
+    other: 'info'
+  }
+  return typeMap[type] || 'info'
+}
+
+function getFeedbackStatusTagType(status: string): 'primary' | 'success' | 'warning' | 'danger' | 'info' {
+  const statusMap: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info'> = {
+    pending: 'warning',
+    processing: 'primary',
+    replied: 'success',
+    closed: 'info'
+  }
+  return statusMap[status] || 'info'
+}
+
+function getPublicReplyCount(row: Feedback): number {
+  return row.replies.filter(r => !r.is_internal).length
+}
+
+function getInternalReplyCount(row: Feedback): number {
+  return row.replies.filter(r => r.is_internal).length
+}
 </script>
 
 <style scoped>
@@ -838,5 +1424,229 @@ function getStatusText(status: string) {
 .promotion-dialog :deep(.el-dialog__body) {
   max-height: 60vh;
   overflow-y: auto;
+}
+
+.user-info-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-avatar-small {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 14px !important;
+  background: var(--gradient-primary);
+  color: #fff;
+}
+
+.username-text {
+  font-weight: 500;
+}
+
+.feedback-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-text {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.related-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.related-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.no-related {
+  color: var(--text-tertiary);
+}
+
+.attachment-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--primary-color);
+  font-size: 14px;
+}
+
+.internal-badge {
+  margin-left: 4px;
+}
+
+.feedback-admin-dialog :deep(.el-dialog__body) {
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.feedback-detail-admin .detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.feedback-detail-admin .detail-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.feedback-detail-admin .detail-title h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.feedback-detail-admin .detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.feedback-detail-admin .meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.feedback-detail-admin .detail-section {
+  margin-bottom: 24px;
+}
+
+.feedback-detail-admin .detail-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+}
+
+.feedback-detail-admin .description-text {
+  line-height: 1.8;
+  color: var(--text-primary);
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.feedback-detail-admin .attachment-list {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.feedback-detail-admin .attachment-item {
+  width: 120px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.feedback-detail-admin .attachment-item:hover {
+  transform: scale(1.02);
+}
+
+.feedback-detail-admin .attachment-item img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.feedback-detail-admin .attachment-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feedback-detail-admin .timeline {
+  padding: 8px 0;
+}
+
+.feedback-detail-admin .reply-item {
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.feedback-detail-admin .reply-item.is-admin {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0.02));
+  border-left: 3px solid var(--primary-color);
+}
+
+.feedback-detail-admin .reply-item.is-internal {
+  background: linear-gradient(135deg, rgba(230, 162, 60, 0.1), rgba(230, 162, 60, 0.02));
+  border-left: 3px solid var(--warning-color);
+}
+
+.feedback-detail-admin .reply-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.feedback-detail-admin .replier-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.feedback-detail-admin .reply-content {
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.feedback-detail-admin .reply-section {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.feedback-detail-admin .reply-options {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.feedback-detail-admin .reply-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
 </style>

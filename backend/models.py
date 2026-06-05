@@ -69,3 +69,47 @@ class PromotionBook(Base):
     purchase_limit = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Feedback(Base):
+    """客服反馈主表"""
+    __tablename__ = "feedbacks"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    type = Column(String(50), nullable=False, index=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    contact_info = Column(String(200), nullable=True)
+    related_order_id = Column(String(100), nullable=True, index=True)
+    related_book_id = Column(Integer, nullable=True, index=True)
+    status = Column(String(50), nullable=False, default="pending", index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class FeedbackAttachment(Base):
+    """反馈附件表"""
+    __tablename__ = "feedback_attachments"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    feedback_id = Column(Integer, nullable=False, index=True)
+    file_name = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_size = Column(Integer, nullable=True)
+    file_type = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class FeedbackReply(Base):
+    """反馈回复记录表"""
+    __tablename__ = "feedback_replies"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    feedback_id = Column(Integer, nullable=False, index=True)
+    replier_id = Column(Integer, nullable=False, index=True)
+    replier_type = Column(String(20), nullable=False)
+    content = Column(Text, nullable=False)
+    is_internal = Column(Boolean, default=False, index=True)
+    status_change = Column(String(50), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

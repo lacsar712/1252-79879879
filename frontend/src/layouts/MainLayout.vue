@@ -21,6 +21,10 @@
             <el-icon><Present /></el-icon>
             <span>活动专题</span>
           </router-link>
+          <router-link v-if="userStore.isLoggedIn" to="/feedback/submit" class="nav-link" active-class="active">
+            <el-icon><Service /></el-icon>
+            <span>客服反馈</span>
+          </router-link>
           <router-link v-if="userStore.isAdmin" to="/admin" class="nav-link" active-class="active">
             <el-icon><Setting /></el-icon>
             <span>后台管理</span>
@@ -42,6 +46,14 @@
                   <el-dropdown-item>
                     <el-icon><User /></el-icon>
                     {{ userStore.isAdmin ? '管理员' : '普通用户' }}
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/feedbacks')">
+                    <el-icon><ChatDotRound /></el-icon>
+                    我的反馈
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/feedback/submit')">
+                    <el-icon><Service /></el-icon>
+                    提交反馈
                   </el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout">
                     <el-icon><SwitchButton /></el-icon>
@@ -87,7 +99,9 @@ import {
   Setting,
   ArrowDown,
   User,
-  SwitchButton
+  SwitchButton,
+  Service,
+  ChatDotRound
 } from '@element-plus/icons-vue'
 
 const router = useRouter()

@@ -1,5 +1,11 @@
 import axios from 'axios'
-import type { Book, BookListResponse, BookCreate, LoginResponse, User, Promotion, PromotionListResponse, PromotionCreate, PromotionUpdate } from '@/types'
+import type { 
+    Book, BookListResponse, BookCreate, LoginResponse, User, 
+    Promotion, PromotionListResponse, PromotionCreate, PromotionUpdate,
+    Feedback, FeedbackListResponse, FeedbackCreate, FeedbackReplySubmit,
+    FeedbackTypeOption, FeedbackStatusOption, FeedbackUploadResponse,
+    FeedbackReply
+} from '@/types'
 import { ElMessage } from 'element-plus'
 
 const instance = axios.create({
@@ -80,5 +86,56 @@ export const api = {
         instance.delete(`/promotions/${id}`),
 
     deductPromotionStock: (promotionId: number, promotionBookId: number, quantity: number): Promise<Promotion> =>
-        instance.post(`/promotions/${promotionId}/deduct-stock`, { promotion_book_id: promotionBookId, quantity })
+        instance.post(`/promotions/${promotionId}/deduct-stock`, { promotion_book_id: promotionBookId, quantity }),
+
+    // 反馈相关
+    uploadFeedbackAttachment: (file: File): Promise<FeedbackUploadResponse> => {
+        const formData = new FormData()
+        formData.append('file', file)
+        return instance.post('/feedbacks/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+    },
+
+    createFeedback: (feedback: FeedbackCreate): Promise<Feedback> =>
+        instance.post('/feedbacks', feedback),
+
+    getMyFeedbacks: (params?: {
+        page?: number
+        page_size?: number
+        status?: string
+        type?: string
+        start_date?: string
+        end_date?: string
+    }): Promise<FeedbackListResponse> =>
+        instance.get('/feedbacks/my', { params }),
+
+    getFeedback: (id: number): Promise<Feedback> =>
+        instance.get(`/feedbacks/${id}`),
+
+    replyFeedback: (id: number, content: string): Promise<FeedbackReply> =>
+        instance.post(`/feedbacks/${id}/reply`, { content }),
+
+    getAllFeedbacks: (params?: {
+        page?: number
+        page_size?: number
+        status?: string
+        type?: string
+        start_date?: string
+        end_date?: string
+        keyword?: string
+    }): Promise<FeedbackListResponse> =>
+        instance.get('/feedbacks', { params }),
+
+    adminReplyFeedback: (id: number, reply: FeedbackReplySubmit): Promise<FeedbackReply> =>
+        instance.post(`/feedbacks/${id}/admin-reply`, reply),
+
+    updateFeedbackStatus: (id: number, status: string): Promise<Feedback> =>
+        instance.put(`/feedbacks/${id}/status`, { status }),
+
+    getFeedbackTypes: (): Promise<FeedbackTypeOption[]> =>
+        instance.get('/feedbacks/types/list'),
+
+    getFeedbackStatuses: (): Promise<FeedbackStatusOption[]> =>
+        instance.get('/feedbacks/statuses/list')
 }

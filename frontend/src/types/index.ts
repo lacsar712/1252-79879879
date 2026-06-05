@@ -109,3 +109,96 @@ export interface PromotionUpdate {
     is_displayed?: boolean
     books?: PromotionBookCreate[]
 }
+
+export interface FeedbackAttachment {
+    id: number
+    feedback_id: number
+    file_name: string
+    file_path: string
+    file_size: number | null
+    file_type: string | null
+    created_at: string
+}
+
+export interface FeedbackAttachmentCreate {
+    file_name: string
+    file_path: string
+    file_size?: number
+    file_type?: string
+}
+
+export interface FeedbackReply {
+    id: number
+    feedback_id: number
+    replier_id: number
+    replier_type: 'user' | 'admin'
+    content: string
+    is_internal: boolean
+    status_change: string | null
+    replier_name: string | null
+    created_at: string
+}
+
+export interface Feedback {
+    id: number
+    user_id: number
+    type: 'product' | 'order' | 'account' | 'payment' | 'other'
+    title: string
+    description: string
+    contact_info: string | null
+    related_order_id: string | null
+    related_book_id: number | null
+    status: 'pending' | 'processing' | 'replied' | 'closed'
+    username: string | null
+    related_book: Book | null
+    attachments: FeedbackAttachment[]
+    replies: FeedbackReply[]
+    created_at: string
+    updated_at: string
+}
+
+export interface FeedbackCreate {
+    type: string
+    title: string
+    description: string
+    contact_info?: string
+    related_order_id?: string
+    related_book_id?: number
+    attachments: FeedbackAttachmentCreate[]
+}
+
+export interface FeedbackReplySubmit {
+    content: string
+    is_internal?: boolean
+    status_change?: string
+}
+
+export interface FeedbackUpdate {
+    status?: string
+    title?: string
+    description?: string
+}
+
+export interface FeedbackListResponse {
+    total: number
+    page: number
+    page_size: number
+    items: Feedback[]
+}
+
+export interface FeedbackTypeOption {
+    value: string
+    label: string
+}
+
+export interface FeedbackStatusOption {
+    value: string
+    label: string
+}
+
+export interface FeedbackUploadResponse {
+    file_name: string
+    file_path: string
+    file_size: number
+    file_type: string
+}
