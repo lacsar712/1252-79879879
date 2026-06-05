@@ -47,6 +47,10 @@
                     <el-icon><User /></el-icon>
                     {{ userStore.isAdmin ? '管理员' : '普通用户' }}
                   </el-dropdown-item>
+                  <el-dropdown-item v-if="userStore.isAdmin" @click="router.push('/api-keys')">
+                    <el-icon><Key /></el-icon>
+                    API Key 管理
+                  </el-dropdown-item>
                   <el-dropdown-item @click="router.push('/addresses')">
                     <el-icon><Location /></el-icon>
                     收货地址
@@ -111,7 +115,8 @@ import {
   SwitchButton,
   Service,
   ChatDotRound,
-  Location
+  Location,
+  Key
 } from '@element-plus/icons-vue'
 
 const router = useRouter()

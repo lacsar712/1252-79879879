@@ -245,3 +245,42 @@ class UserAddress(Base):
     is_default = Column(Boolean, default=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class APIKey(Base):
+    """API Key 模型"""
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(100), nullable=False, index=True)
+    remark = Column(String(500), nullable=True)
+    api_key = Column(String(64), unique=True, index=True, nullable=False)
+    api_secret = Column(String(64), nullable=False)
+    is_enabled = Column(Boolean, default=True, index=True)
+    expires_at = Column(DateTime, nullable=True, index=True)
+    access_scope = Column(String(200), default="books:read", index=True)
+    rate_limit = Column(Integer, default=100, nullable=False)
+    rate_period = Column(String(20), default="minute", nullable=False)
+    allowed_ips = Column(String(500), nullable=True)
+    created_by = Column(Integer, nullable=False, index=True)
+    last_used_at = Column(DateTime, nullable=True)
+    call_count = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class APIKeyCallLog(Base):
+    """API Key 调用日志模型"""
+    __tablename__ = "api_key_call_logs"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    api_key_id = Column(Integer, nullable=False, index=True)
+    api_key = Column(String(64), nullable=False, index=True)
+    endpoint = Column(String(200), nullable=False, index=True)
+    method = Column(String(10), nullable=False)
+    ip_address = Column(String(50), nullable=True, index=True)
+    status_code = Column(Integer, nullable=False, index=True)
+    response_time_ms = Column(Integer, nullable=True)
+    error_message = Column(String(1000), nullable=True)
+    request_params = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)

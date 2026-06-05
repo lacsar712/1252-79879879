@@ -605,3 +605,131 @@ class BookCompareRequest(BaseModel):
 class BookCompareResponse(BaseModel):
     items: List[BookCompareData]
     invalid_ids: List[int]
+
+
+# ========== API Key 相关 Schema ==========
+class APIKeyBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    remark: Optional[str] = Field(None, max_length=500)
+    is_enabled: bool = True
+    expires_at: Optional[datetime] = None
+    access_scope: str = Field("books:read", max_length=200)
+    rate_limit: int = Field(100, ge=1, le=10000)
+    rate_period: str = Field("minute", max_length=20)
+    allowed_ips: Optional[str] = Field(None, max_length=500)
+
+
+class APIKeyCreate(APIKeyBase):
+    pass
+
+
+class APIKeyUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    remark: Optional[str] = Field(None, max_length=500)
+    is_enabled: Optional[bool] = None
+    expires_at: Optional[datetime] = None
+    access_scope: Optional[str] = Field(None, max_length=200)
+    rate_limit: Optional[int] = Field(None, ge=1, le=10000)
+    rate_period: Optional[str] = Field(None, max_length=20)
+    allowed_ips: Optional[str] = Field(None, max_length=500)
+
+
+class APIKeyResponse(APIKeyBase):
+    id: int
+    api_key: str
+    api_secret: Optional[str] = None
+    created_by: int
+    created_by_name: Optional[str] = None
+    last_used_at: Optional[datetime] = None
+    call_count: int = 0
+    risk_status: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class APIKeyCreateResponse(BaseModel):
+    id: int
+    api_key: str
+    api_secret: str
+    message: str
+
+
+class APIKeyRotateResponse(BaseModel):
+    id: int
+    api_key: str
+    api_secret: str
+    message: str
+
+
+class APIKeyListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[APIKeyResponse]
+
+
+class APIKeyCallLogResponse(BaseModel):
+    id: int
+    api_key_id: int
+    api_key: str
+    endpoint: str
+    method: str
+    ip_address: Optional[str]
+    status_code: int
+    response_time_ms: Optional[int]
+    error_message: Optional[str]
+    request_params: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class APIKeyCallLogListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[APIKeyCallLogResponse]
+
+
+class APIKeyAccessScopeOption(BaseModel):
+    value: str
+    label: str
+
+
+class APIKeyRatePeriodOption(BaseModel):
+    value: str
+    label: str
+
+
+class APIKeyStatusOption(BaseModel):
+    value: str
+    label: str
+    type: str
+
+
+class OpenAPIBookResponse(BaseModel):
+    id: int
+    title: str
+    author: str
+    publisher: Optional[str]
+    isbn: Optional[str]
+    price: float
+    stock: int
+    description: Optional[str]
+    cover_image: Optional[str]
+    category: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class OpenAPIBookListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[OpenAPIBookResponse]

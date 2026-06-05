@@ -548,3 +548,125 @@ export interface BookCompareResponse {
     items: BookCompareData[]
     invalid_ids: number[]
 }
+
+export interface APIKey {
+    id: number
+    name: string
+    remark: string | null
+    api_key: string
+    api_secret: string | null
+    is_enabled: boolean
+    expires_at: string | null
+    access_scope: string
+    rate_limit: number
+    rate_period: string
+    allowed_ips: string | null
+    created_by: number
+    created_by_name: string | null
+    last_used_at: string | null
+    call_count: number
+    risk_status: 'disabled' | 'expired' | 'expiring_soon' | 'high_risk' | 'medium_risk' | 'inactive' | null
+    created_at: string
+    updated_at: string
+}
+
+export interface APIKeyCreate {
+    name: string
+    remark?: string
+    is_enabled: boolean
+    expires_at?: string
+    access_scope: string
+    rate_limit: number
+    rate_period: string
+    allowed_ips?: string
+}
+
+export interface APIKeyUpdate {
+    name?: string
+    remark?: string
+    is_enabled?: boolean
+    expires_at?: string
+    access_scope?: string
+    rate_limit?: number
+    rate_period?: string
+    allowed_ips?: string
+}
+
+export interface APIKeyCreateResponse {
+    id: number
+    api_key: string
+    api_secret: string
+    message: string
+}
+
+export interface APIKeyRotateResponse {
+    id: number
+    api_key: string
+    api_secret: string
+    message: string
+}
+
+export interface APIKeyListResponse {
+    total: number
+    page: number
+    page_size: number
+    items: APIKey[]
+}
+
+export interface APIKeyCallLog {
+    id: number
+    api_key_id: number
+    api_key: string
+    endpoint: string
+    method: string
+    ip_address: string | null
+    status_code: number
+    response_time_ms: number | null
+    error_message: string | null
+    request_params: string | null
+    created_at: string
+}
+
+export interface APIKeyCallLogListResponse {
+    total: number
+    page: number
+    page_size: number
+    items: APIKeyCallLog[]
+}
+
+export interface APIKeyAccessScopeOption {
+    value: string
+    label: string
+}
+
+export interface APIKeyRatePeriodOption {
+    value: string
+    label: string
+}
+
+export interface APIKeyStatusOption {
+    value: string
+    label: string
+    type: string
+}
+
+export interface OpenAPIBook {
+    id: number
+    title: string
+    author: string
+    publisher: string | null
+    isbn: string | null
+    price: number
+    stock: number
+    description: string | null
+    cover_image: string | null
+    category: string | null
+    created_at: string
+}
+
+export interface OpenAPIBookListResponse {
+    total: number
+    page: number
+    page_size: number
+    items: OpenAPIBook[]
+}

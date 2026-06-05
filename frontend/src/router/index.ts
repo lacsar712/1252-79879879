@@ -95,6 +95,12 @@ const routes: RouteRecordRaw[] = [
                 name: 'BookCompare',
                 component: () => import('@/views/BookCompare.vue'),
                 meta: { title: '图书对比' }
+            },
+            {
+                path: 'api-keys',
+                name: 'APIKeyManagement',
+                component: () => import('@/views/APIKeyManagement.vue'),
+                meta: { title: 'API Key 管理', requiresAdmin: true }
             }
         ]
     },

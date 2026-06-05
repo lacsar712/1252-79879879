@@ -14,7 +14,11 @@ import type {
     PurchaseOrderStatusOption, StockChange,
     UserAddress, UserAddressListResponse, UserAddressCreate, UserAddressUpdate,
     UserAddressDeleteResponse, UserAddressReassignDefaultRequest, AddressTagOption,
-    BookCompareResponse
+    BookCompareResponse,
+    APIKey, APIKeyListResponse, APIKeyCreate, APIKeyUpdate,
+    APIKeyCreateResponse, APIKeyRotateResponse,
+    APIKeyCallLogListResponse,
+    APIKeyAccessScopeOption, APIKeyRatePeriodOption, APIKeyStatusOption
 } from '@/types'
 import { ElMessage } from 'element-plus'
 
@@ -321,5 +325,63 @@ export const api = {
         instance.post('/books/compare/save', { book_ids: bookIds }),
 
     getSavedCompareList: (): Promise<{ book_ids: number[] }> =>
-        instance.get('/books/compare/saved')
+        instance.get('/books/compare/saved'),
+
+    // API Key 管理相关
+    getAPIKeys: (params?: {
+        page?: number
+        page_size?: number
+        search?: string
+        is_enabled?: boolean
+        risk_status?: string
+    }): Promise<APIKeyListResponse> =>
+        instance.get('/api-keys', { params }),
+
+    getAPIKey: (id: number): Promise<APIKey> =>
+        instance.get(`/api-keys/${id}`),
+
+    createAPIKey: (data: APIKeyCreate): Promise<APIKeyCreateResponse> =>
+        instance.post('/api-keys', data),
+
+    updateAPIKey: (id: number, data: APIKeyUpdate): Promise<APIKey> =>
+        instance.put(`/api-keys/${id}`, data),
+
+    deleteAPIKey: (id: number): Promise<void> =>
+        instance.delete(`/api-keys/${id}`),
+
+    toggleAPIKey: (id: number): Promise<APIKey> =>
+        instance.post(`/api-keys/${id}/toggle`),
+
+    rotateAPIKey: (id: number): Promise<APIKeyRotateResponse> =>
+        instance.post(`/api-keys/${id}/rotate`),
+
+    getAPIKeyLogs: (id: number, params?: {
+        page?: number
+        page_size?: number
+        status?: string
+        start_date?: string
+        end_date?: string
+    }): Promise<APIKeyCallLogListResponse> =>
+        instance.get(`/api-keys/${id}/logs`, { params }),
+
+    getAPIAccessScopes: (): Promise<APIKeyAccessScopeOption[]> =>
+        instance.get('/api-keys/scopes/list'),
+
+    getAPIRatePeriods: (): Promise<APIKeyRatePeriodOption[]> =>
+        instance.get('/api-keys/rate-periods/list'),
+
+    getAPIKeyStatuses: (): Promise<APIKeyStatusOption[]> =>
+        instance.get('/api-keys/statuses/list'),
+
+    // 开放 API 测试
+    testOpenAPI: (apiKey: string, params?: {
+        page?: number
+        page_size?: number
+        search?: string
+        category?: string
+    }): Promise<any> =>
+        instance.get('/open/books', {
+            params,
+            headers: { 'X-API-Key': apiKey }
+        })
 }
