@@ -107,6 +107,18 @@ const routes: RouteRecordRaw[] = [
                 name: 'APIKeyManagement',
                 component: () => import('@/views/APIKeyManagement.vue'),
                 meta: { title: 'API Key 管理', requiresAdmin: true }
+            },
+            {
+                path: 'books/import',
+                name: 'BookImport',
+                component: () => import('@/views/BookImport.vue'),
+                meta: { title: '图书批量导入', requiresAdmin: true }
+            },
+            {
+                path: 'books/import/history',
+                name: 'BookImportHistory',
+                component: () => import('@/views/BookImportHistory.vue'),
+                meta: { title: '导入历史记录', requiresAdmin: true }
             }
         ]
     },

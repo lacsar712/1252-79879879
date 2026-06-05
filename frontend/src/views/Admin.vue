@@ -4,10 +4,20 @@
       <el-tab-pane label="图书管理" name="books">
         <div class="admin-header">
           <h1>图书管理</h1>
-          <el-button type="primary" @click="handleAddBook">
-            <el-icon><Plus /></el-icon>
-            添加图书
-          </el-button>
+          <div class="header-buttons">
+            <el-button type="success" @click="handleImportBooks">
+              <el-icon><Upload /></el-icon>
+              批量导入
+            </el-button>
+            <el-button @click="handleImportHistory">
+              <el-icon><List /></el-icon>
+              导入记录
+            </el-button>
+            <el-button type="primary" @click="handleAddBook">
+              <el-icon><Plus /></el-icon>
+              添加图书
+            </el-button>
+          </div>
         </div>
         
         <div class="search-bar">
@@ -1742,7 +1752,7 @@ import { useRouter } from 'vue-router'
 import { api } from '@/api'
 import type { Book, BookCreate, Promotion, PromotionCreate, Feedback, FeedbackTypeOption, FeedbackStatusOption, FeedbackReplySubmit, BookChapter, BookChapterCreate, StockTaking, StockTakingCreate, StockTakingScopeOption, Supplier, SupplierCreate, PurchaseOrder, PurchaseOrderCreate, PurchaseOrderStatusOption, SupplierOption } from '@/types'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Search, Picture, User, Clock, Phone, ShoppingCart, Collection, ChatDotRound, Promotion as PromotionIcon, Service, Edit, Check, ArrowDown, UserFilled } from '@element-plus/icons-vue'
+import { Plus, Search, Picture, User, Clock, Phone, ShoppingCart, Collection, ChatDotRound, Promotion as PromotionIcon, Service, Edit, Check, ArrowDown, UserFilled, Upload, List } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -2039,6 +2049,14 @@ async function fetchPromotions() {
   } finally {
     loadingPromotions.value = false
   }
+}
+
+function handleImportBooks() {
+  router.push('/books/import')
+}
+
+function handleImportHistory() {
+  router.push('/books/import/history')
 }
 
 function handleAddBook() {
@@ -3071,6 +3089,11 @@ function formatDate(date: string | Date, format: string = 'datetime'): string {
 .admin-header h1 {
   font-size: 24px;
   font-weight: 600;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 12px;
 }
 
 .search-bar {

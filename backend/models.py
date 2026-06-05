@@ -317,3 +317,46 @@ class AnnouncementCloseRecord(Base):
     user_id = Column(Integer, nullable=False, index=True)
     closed_at = Column(DateTime, default=datetime.utcnow, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class BookImportRecord(Base):
+    """图书导入记录模型"""
+    __tablename__ = "book_import_records"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    import_no = Column(String(50), unique=True, index=True, nullable=False)
+    file_name = Column(String(255), nullable=False)
+    file_size = Column(Integer, nullable=False, default=0)
+    total_rows = Column(Integer, nullable=False, default=0)
+    success_count = Column(Integer, nullable=False, default=0)
+    failed_count = Column(Integer, nullable=False, default=0)
+    skipped_count = Column(Integer, nullable=False, default=0)
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    error_summary = Column(Text, nullable=True)
+    created_by = Column(Integer, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+
+class BookImportItem(Base):
+    """图书导入明细模型"""
+    __tablename__ = "book_import_items"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    import_record_id = Column(Integer, nullable=False, index=True)
+    row_number = Column(Integer, nullable=False)
+    title = Column(String(200), nullable=True)
+    author = Column(String(100), nullable=True)
+    publisher = Column(String(100), nullable=True)
+    isbn = Column(String(20), nullable=True)
+    price = Column(Float, nullable=True)
+    stock = Column(Integer, nullable=True)
+    description = Column(Text, nullable=True)
+    cover_image = Column(String(500), nullable=True)
+    category = Column(String(50), nullable=True)
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    error_message = Column(Text, nullable=True)
+    book_id = Column(Integer, nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

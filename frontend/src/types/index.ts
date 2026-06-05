@@ -745,3 +745,146 @@ export interface AnnouncementStatusOption {
     label: string
     type: string
 }
+
+export interface BookImportFieldMapping {
+    csv_column: string
+    target_field: string | null
+}
+
+export interface BookImportPreviewRow {
+    row_number: number
+    title: string | null
+    author: string | null
+    publisher: string | null
+    isbn: string | null
+    price: number | null
+    stock: number | null
+    description: string | null
+    cover_image: string | null
+    category: string | null
+    errors: string[]
+    warnings: string[]
+    is_skipped: boolean
+}
+
+export interface BookImportPreviewRequest {
+    file_id: string
+    field_mappings: BookImportFieldMapping[]
+}
+
+export interface BookImportPreviewResponse {
+    file_id: string
+    file_name: string
+    total_rows: number
+    columns: string[]
+    field_mappings: BookImportFieldMapping[]
+    preview_rows: BookImportPreviewRow[]
+    has_errors: boolean
+    error_count: number
+    warning_count: number
+}
+
+export interface BookImportRowUpdate {
+    row_number: number
+    title?: string
+    author?: string
+    publisher?: string
+    isbn?: string
+    price?: number
+    stock?: number
+    description?: string
+    cover_image?: string
+    category?: string
+    is_skipped?: boolean
+}
+
+export interface BookImportConfirmRequest {
+    file_id: string
+    field_mappings: BookImportFieldMapping[]
+    row_updates: BookImportRowUpdate[]
+    skipped_rows: number[]
+}
+
+export interface BookImportProgressResponse {
+    import_record_id: number
+    import_no: string
+    status: 'pending' | 'processing' | 'completed' | 'failed'
+    total_rows: number
+    processed_rows: number
+    success_count: number
+    failed_count: number
+    skipped_count: number
+    progress_percent: number
+    error_summary?: string | null
+}
+
+export interface BookImportUploadResponse {
+    file_id: string
+    file_name: string
+    file_size: number
+    columns: string[]
+    total_rows: number
+}
+
+export interface BookImportFieldOption {
+    field: string
+    label: string
+    required: boolean
+    type: string
+}
+
+export interface BookImportItem {
+    id: number
+    import_record_id: number
+    row_number: number
+    title: string | null
+    author: string | null
+    publisher: string | null
+    isbn: string | null
+    price: number | null
+    stock: number | null
+    description: string | null
+    cover_image: string | null
+    category: string | null
+    status: 'pending' | 'success' | 'failed' | 'skipped'
+    error_message: string | null
+    book_id: number | null
+    book: Book | null
+    created_at: string
+    updated_at: string
+}
+
+export interface BookImportRecord {
+    id: number
+    import_no: string
+    file_name: string
+    file_size: number
+    total_rows: number
+    success_count: number
+    failed_count: number
+    skipped_count: number
+    status: 'pending' | 'processing' | 'completed' | 'failed'
+    error_summary: string | null
+    created_by: number
+    created_by_name: string | null
+    created_at: string
+    updated_at: string
+    completed_at: string | null
+}
+
+export interface BookImportRecordDetail extends BookImportRecord {
+    items: BookImportItem[]
+}
+
+export interface BookImportRecordListResponse {
+    total: number
+    page: number
+    page_size: number
+    items: BookImportRecord[]
+}
+
+export interface BookImportStatusOption {
+    value: string
+    label: string
+    type: '' | 'success' | 'warning' | 'info' | 'danger' | 'primary'
+}

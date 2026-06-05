@@ -15,6 +15,7 @@ from models import Base
 from seed import init_db, seed_data
 from routes.auth import router as auth_router
 from routes.books import router as books_router
+from routes.book_imports import router as book_imports_router
 from routes.promotions import router as promotions_router
 from routes.feedbacks import router as feedbacks_router
 from routes.chapters import router as chapters_router
@@ -78,6 +79,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # 注册路由
 app.include_router(auth_router)
 app.include_router(books_router)
+app.include_router(book_imports_router)
 app.include_router(promotions_router)
 app.include_router(feedbacks_router)
 app.include_router(chapters_router)

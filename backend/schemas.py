@@ -810,3 +810,164 @@ class AnnouncementStatusOption(BaseModel):
     value: str
     label: str
     type: str
+
+
+# ========== 图书导入相关 Schema ==========
+class BookImportFieldMapping(BaseModel):
+    """字段映射"""
+    csv_column: str = Field(..., description="CSV列名")
+    target_field: Optional[str] = Field(None, description="目标字段，为空表示忽略该列")
+
+
+class BookImportPreviewRow(BaseModel):
+    """导入预览行数据"""
+    row_number: int = Field(..., description="行号")
+    title: Optional[str] = Field(None, max_length=200)
+    author: Optional[str] = Field(None, max_length=100)
+    publisher: Optional[str] = Field(None, max_length=100)
+    isbn: Optional[str] = Field(None, max_length=20)
+    price: Optional[float] = Field(None)
+    stock: Optional[int] = Field(None)
+    description: Optional[str] = None
+    cover_image: Optional[str] = None
+    category: Optional[str] = Field(None, max_length=50)
+    errors: List[str] = Field(default_factory=list, description="错误信息列表")
+    warnings: List[str] = Field(default_factory=list, description="警告信息列表")
+    is_skipped: bool = Field(default=False, description="是否跳过该行")
+
+
+class BookImportPreviewRequest(BaseModel):
+    """导入预览请求"""
+    file_id: str = Field(..., description="文件ID")
+    field_mappings: List[BookImportFieldMapping] = Field(..., description="字段映射列表")
+
+
+class BookImportPreviewResponse(BaseModel):
+    """导入预览响应"""
+    file_id: str = Field(..., description="文件ID")
+    file_name: str = Field(..., description="文件名")
+    total_rows: int = Field(..., description="总行数")
+    columns: List[str] = Field(default_factory=list, description="CSV列名列表")
+    field_mappings: List[BookImportFieldMapping] = Field(default_factory=list, description="字段映射列表")
+    preview_rows: List[BookImportPreviewRow] = Field(default_factory=list, description="预览数据（前100行）")
+    has_errors: bool = Field(default=False, description="是否有错误")
+    error_count: int = Field(default=0, description="错误行数")
+    warning_count: int = Field(default=0, description="警告行数")
+
+
+class BookImportRowUpdate(BaseModel):
+    """导入行数据更新"""
+    row_number: int = Field(..., description="行号")
+    title: Optional[str] = Field(None, max_length=200)
+    author: Optional[str] = Field(None, max_length=100)
+    publisher: Optional[str] = Field(None, max_length=100)
+    isbn: Optional[str] = Field(None, max_length=20)
+    price: Optional[float] = Field(None)
+    stock: Optional[int] = Field(None)
+    description: Optional[str] = None
+    cover_image: Optional[str] = None
+    category: Optional[str] = Field(None, max_length=50)
+    is_skipped: Optional[bool] = Field(None, description="是否跳过该行")
+
+
+class BookImportConfirmRequest(BaseModel):
+    """确认导入请求"""
+    file_id: str = Field(..., description="文件ID")
+    field_mappings: List[BookImportFieldMapping] = Field(..., description="字段映射列表")
+    row_updates: List[BookImportRowUpdate] = Field(default_factory=list, description="行数据更新列表")
+    skipped_rows: List[int] = Field(default_factory=list, description="要跳过的行号列表")
+
+
+class BookImportProgressResponse(BaseModel):
+    """导入进度响应"""
+    import_record_id: int = Field(..., description="导入记录ID")
+    import_no: str = Field(..., description="导入单号")
+    status: str = Field(..., description="状态：pending/processing/completed/failed")
+    total_rows: int = Field(..., description="总行数")
+    processed_rows: int = Field(default=0, description="已处理行数")
+    success_count: int = Field(default=0, description="成功数量")
+    failed_count: int = Field(default=0, description="失败数量")
+    skipped_count: int = Field(default=0, description="跳过数量")
+    progress_percent: float = Field(default=0, description="进度百分比")
+    error_summary: Optional[str] = Field(default=None, description="错误摘要")
+
+
+class BookImportItemResponse(BaseModel):
+    """导入明细响应"""
+    id: int
+    import_record_id: int
+    row_number: int
+    title: Optional[str] = None
+    author: Optional[str] = None
+    publisher: Optional[str] = None
+    isbn: Optional[str] = None
+    price: Optional[float] = None
+    stock: Optional[int] = None
+    description: Optional[str] = None
+    cover_image: Optional[str] = None
+    category: Optional[str] = None
+    status: str
+    error_message: Optional[str] = None
+    book_id: Optional[int] = None
+    book: Optional[BookResponse] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BookImportRecordResponse(BaseModel):
+    """导入记录响应"""
+    id: int
+    import_no: str
+    file_name: str
+    file_size: int
+    total_rows: int
+    success_count: int
+    failed_count: int
+    skipped_count: int
+    status: str
+    error_summary: Optional[str] = None
+    created_by: int
+    created_by_name: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BookImportRecordDetailResponse(BookImportRecordResponse):
+    """导入记录详情响应"""
+    items: List[BookImportItemResponse] = Field(default_factory=list)
+
+
+class BookImportRecordListResponse(BaseModel):
+    """导入记录列表响应"""
+    total: int
+    page: int
+    page_size: int
+    items: List[BookImportRecordResponse]
+
+
+class BookImportUploadResponse(BaseModel):
+    """文件上传响应"""
+    file_id: str = Field(..., description="文件ID")
+    file_name: str = Field(..., description="文件名")
+    file_size: int = Field(..., description="文件大小（字节）")
+    columns: List[str] = Field(default_factory=list, description="CSV列名列表")
+    total_rows: int = Field(..., description="数据行数（不含表头）")
+
+
+class BookImportResultResponse(BaseModel):
+    """导入结果响应"""
+    import_record_id: int
+    import_no: str
+    status: str
+    total_rows: int
+    success_count: int
+    failed_count: int
+    skipped_count: int
+    error_summary: Optional[str] = None

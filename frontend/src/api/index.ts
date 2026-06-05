@@ -21,7 +21,11 @@ import type {
     APIKeyAccessScopeOption, APIKeyRatePeriodOption, APIKeyStatusOption,
     Announcement, AnnouncementListResponse, AnnouncementCreate, AnnouncementUpdate,
     AnnouncementDisplayPositionOption, AnnouncementDisplayTypeOption,
-    AnnouncementTargetUserTypeOption, AnnouncementStatusOption
+    AnnouncementTargetUserTypeOption, AnnouncementStatusOption,
+    BookImportUploadResponse, BookImportPreviewResponse, BookImportPreviewRequest,
+    BookImportConfirmRequest, BookImportProgressResponse,
+    BookImportRecordListResponse, BookImportRecordDetail,
+    BookImportFieldOption, BookImportStatusOption
 } from '@/types'
 import { ElMessage } from 'element-plus'
 
@@ -429,5 +433,47 @@ export const api = {
         instance.get('/announcements/target-user-types/list'),
 
     getAnnouncementStatuses: (): Promise<AnnouncementStatusOption[]> =>
-        instance.get('/announcements/statuses/list')
+        instance.get('/announcements/statuses/list'),
+
+    // 图书导入相关
+    uploadBookImportFile: (file: File): Promise<BookImportUploadResponse> => {
+        const formData = new FormData()
+        formData.append('file', file)
+        return instance.post('/books/import/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+    },
+
+    getBookImportFields: (): Promise<BookImportFieldOption[]> =>
+        instance.get('/books/import/fields'),
+
+    previewBookImport: (data: BookImportPreviewRequest): Promise<BookImportPreviewResponse> =>
+        instance.post('/books/import/preview', data),
+
+    confirmBookImport: (data: BookImportConfirmRequest): Promise<BookImportProgressResponse> =>
+        instance.post('/books/import/confirm', data),
+
+    getBookImportProgress: (importRecordId: number): Promise<BookImportProgressResponse> =>
+        instance.get(`/books/import/progress/${importRecordId}`),
+
+    getBookImportRecords: (params?: {
+        page?: number
+        page_size?: number
+        status?: string
+        keyword?: string
+    }): Promise<BookImportRecordListResponse> =>
+        instance.get('/books/import/records', { params }),
+
+    getBookImportRecordDetail: (importRecordId: number, params?: {
+        status_filter?: string
+    }): Promise<BookImportRecordDetail> =>
+        instance.get(`/books/import/records/${importRecordId}`, { params }),
+
+    getBookImportStatuses: (): Promise<BookImportStatusOption[]> =>
+        Promise.resolve([
+            { value: 'pending', label: '待处理', type: 'info' },
+            { value: 'processing', label: '处理中', type: 'primary' },
+            { value: 'completed', label: '已完成', type: 'success' },
+            { value: 'failed', label: '失败', type: 'danger' }
+        ])
 }
