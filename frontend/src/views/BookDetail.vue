@@ -47,22 +47,46 @@
             </span>
           </div>
           
-          <div class="book-preview-section" v-if="publicChapters.length > 0">
-            <el-button type="success" size="large" @click="handleStartReading">
-              <el-icon><Reading /></el-icon>
-              开始试读（{{ publicChapters.length }} 章）
-            </el-button>
-          </div>
-          <div class="book-preview-section" v-else-if="!loadingChapters">
-            <el-button type="info" size="large" disabled>
-              <el-icon><Reading /></el-icon>
-              暂无试读章节
-            </el-button>
-          </div>
-          <div class="book-preview-section" v-else>
-            <el-button type="info" size="large" loading>
-              加载中...
-            </el-button>
+          <div class="book-actions">
+            <div class="book-preview-section" v-if="publicChapters.length > 0">
+              <el-button type="success" size="large" @click="handleStartReading">
+                <el-icon><Reading /></el-icon>
+                开始试读（{{ publicChapters.length }} 章）
+              </el-button>
+            </div>
+            <div class="book-preview-section" v-else-if="!loadingChapters">
+              <el-button type="info" size="large" disabled>
+                <el-icon><Reading /></el-icon>
+                暂无试读章节
+              </el-button>
+            </div>
+            <div class="book-preview-section" v-else>
+              <el-button type="info" size="large" loading>
+                加载中...
+              </el-button>
+            </div>
+
+            <div class="book-compare-section">
+              <el-button
+                v-if="book"
+                :type="compareStore.isInCompare(book.id) ? 'success' : 'primary'"
+                size="large"
+                @click="handleCompareToggle"
+              >
+                <el-icon>
+                  <Check v-if="compareStore.isInCompare(book.id)" />
+                  <Histogram v-else />
+                </el-icon>
+                {{ compareStore.isInCompare(book.id) ? '已加入对比' : '加入对比' }}
+              </el-button>
+              <el-button
+                v-if="book && compareStore.compareCount >= 2"
+                size="large"
+                @click="goToCompare"
+              >
+                去对比
+              </el-button>
+            </div>
           </div>
           
         </div>
@@ -98,14 +122,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { api } from '@/api'
+import { useCompareStore } from '@/stores/compare'
 import type { Book, BookChapterPublic } from '@/types'
-import { ArrowLeft, User, OfficeBuilding, Document, Reading, Collection, ArrowRight } from '@element-plus/icons-vue'
+import { ArrowLeft, User, OfficeBuilding, Document, Reading, Collection, ArrowRight, Histogram, Check } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
+const compareStore = useCompareStore()
 
 const loading = ref(false)
 const loadingChapters = ref(false)
@@ -159,6 +185,26 @@ function handleImageError(e: Event) {
   const img = e.target as HTMLImageElement
   img.src = defaultCover
 }
+
+function handleCompareToggle() {
+  if (book.value) {
+    if (compareStore.isInCompare(book.value.id)) {
+      compareStore.removeFromCompare(book.value.id)
+    } else {
+      compareStore.addToCompare(book.value)
+    }
+  }
+}
+
+function goToCompare() {
+  router.push('/books/compare')
+}
+
+watch(book, (newBook) => {
+  if (newBook) {
+    compareStore.hydrateBooks([newBook])
+  }
+})
 </script>
 
 <style scoped>
@@ -281,8 +327,21 @@ function handleImageError(e: Event) {
   color: var(--text-secondary);
 }
 
-.book-preview-section {
+.book-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-top: 16px;
+}
+
+.book-preview-section {
+  margin-top: 0;
+}
+
+.book-compare-section {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .book-chapters {

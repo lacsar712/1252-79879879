@@ -89,6 +89,12 @@ const routes: RouteRecordRaw[] = [
                 name: 'OrderConfirm',
                 component: () => import('@/views/OrderConfirm.vue'),
                 meta: { title: '确认订单', requiresAuth: true }
+            },
+            {
+                path: 'books/compare',
+                name: 'BookCompare',
+                component: () => import('@/views/BookCompare.vue'),
+                meta: { title: '图书对比' }
             }
         ]
     },

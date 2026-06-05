@@ -45,16 +45,28 @@
     <div class="book-list" v-loading="loading">
       <el-row :gutter="24">
         <el-col v-for="book in books" :key="book.id" :xs="12" :sm="8" :md="6" :lg="4">
-          <div class="book-card" @click="router.push(`/books/${book.id}`)">
-            <div class="book-cover">
+          <div class="book-card">
+            <div class="book-cover" @click="router.push(`/books/${book.id}`)">
               <img :src="book.cover_image || defaultCover" :alt="book.title" @error="handleImageError">
               <div class="book-overlay">
                 <el-button type="primary" circle>
                   <el-icon><View /></el-icon>
                 </el-button>
               </div>
+              <el-button
+                class="compare-btn"
+                :type="compareStore.isInCompare(book.id) ? 'success' : 'primary'"
+                size="small"
+                circle
+                @click.stop="handleCompareToggle(book)"
+              >
+                <el-icon>
+                  <Check v-if="compareStore.isInCompare(book.id)" />
+                  <Histogram v-else />
+                </el-icon>
+              </el-button>
             </div>
-            <div class="book-info">
+            <div class="book-info" @click="router.push(`/books/${book.id}`)">
               <h4 class="book-title" :title="book.title">{{ book.title }}</h4>
               <p class="book-author">{{ book.author }}</p>
               <p class="book-publisher" v-if="book.publisher">{{ book.publisher }}</p>
@@ -89,13 +101,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
+import { useCompareStore } from '@/stores/compare'
 import type { Book } from '@/types'
-import { Search, View } from '@element-plus/icons-vue'
+import { Search, View, Histogram, Check } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const compareStore = useCompareStore()
 
 const loading = ref(false)
 const books = ref<Book[]>([])
@@ -146,6 +160,18 @@ function handleImageError(e: Event) {
   const img = e.target as HTMLImageElement
   img.src = defaultCover
 }
+
+function handleCompareToggle(book: Book) {
+  if (compareStore.isInCompare(book.id)) {
+    compareStore.removeFromCompare(book.id)
+  } else {
+    compareStore.addToCompare(book)
+  }
+}
+
+watch(books, (newBooks) => {
+  compareStore.hydrateBooks(newBooks)
+}, { immediate: true })
 </script>
 
 <style scoped>
@@ -237,6 +263,17 @@ function handleImageError(e: Event) {
   justify-content: center;
   opacity: 0;
   transition: opacity 0.2s;
+}
+
+.compare-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10;
 }
 
 .book-info {

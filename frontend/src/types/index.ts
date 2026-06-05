@@ -514,3 +514,37 @@ export interface AddressTagOption {
     label: string
     type: '' | 'success' | 'warning' | 'info' | 'danger' | 'primary'
 }
+
+export interface BookRating {
+    book_id: number
+    rating: number
+    review_count: number
+}
+
+export interface BookTag {
+    book_id: number
+    tags: string[]
+}
+
+export interface BookCompareData {
+    id: number
+    title: string
+    author: string
+    publisher: string | null
+    category: string | null
+    price: number
+    stock: number
+    description: string | null
+    cover_image: string | null
+    isbn: string | null
+    rating: number | null
+    review_count: number
+    tags: string[]
+    is_valid: boolean
+    invalid_reason?: string
+}
+
+export interface BookCompareResponse {
+    items: BookCompareData[]
+    invalid_ids: number[]
+}

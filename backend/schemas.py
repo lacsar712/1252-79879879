@@ -578,3 +578,30 @@ class UserAddressResponse(UserAddressBase):
 class UserAddressListResponse(BaseModel):
     total: int
     items: List[UserAddressResponse]
+
+
+class BookCompareData(BaseModel):
+    id: int
+    title: str
+    author: str
+    publisher: Optional[str]
+    category: Optional[str]
+    price: float
+    stock: int
+    description: Optional[str]
+    cover_image: Optional[str]
+    isbn: Optional[str]
+    rating: Optional[float]
+    review_count: int
+    tags: List[str]
+    is_valid: bool
+    invalid_reason: Optional[str] = None
+
+
+class BookCompareRequest(BaseModel):
+    book_ids: List[int] = Field(..., min_length=1, max_length=4)
+
+
+class BookCompareResponse(BaseModel):
+    items: List[BookCompareData]
+    invalid_ids: List[int]

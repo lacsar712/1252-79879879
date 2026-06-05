@@ -84,8 +84,11 @@
       </router-view>
     </main>
     
+    <!-- 对比栏 -->
+    <CompareBar />
+    
     <!-- 底部 -->
-    <footer class="footer">
+    <footer class="footer" :class="{ 'with-compare-bar': compareStore.hasBooks }">
       <p>© 2024 现代化在线书店 · 基于 Vue 3 + FastAPI 构建</p>
     </footer>
   </div>
@@ -94,7 +97,9 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useCompareStore } from '@/stores/compare'
 import { ElMessage } from 'element-plus'
+import CompareBar from '@/components/CompareBar.vue'
 import {
   Reading,
   HomeFilled,
@@ -111,6 +116,7 @@ import {
 
 const router = useRouter()
 const userStore = useUserStore()
+const compareStore = useCompareStore()
 
 function handleLogout() {
   userStore.logout()
@@ -237,5 +243,10 @@ function handleLogout() {
   color: var(--text-secondary);
   font-size: 14px;
   border-top: 1px solid var(--border-color);
+  transition: padding-bottom 0.3s ease;
+}
+
+.footer.with-compare-bar {
+  padding-bottom: 180px;
 }
 </style>

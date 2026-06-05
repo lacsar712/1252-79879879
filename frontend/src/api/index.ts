@@ -13,7 +13,8 @@ import type {
     PurchaseOrder, PurchaseOrderListResponse, PurchaseOrderCreate, PurchaseOrderUpdate,
     PurchaseOrderStatusOption, StockChange,
     UserAddress, UserAddressListResponse, UserAddressCreate, UserAddressUpdate,
-    UserAddressDeleteResponse, UserAddressReassignDefaultRequest, AddressTagOption
+    UserAddressDeleteResponse, UserAddressReassignDefaultRequest, AddressTagOption,
+    BookCompareResponse
 } from '@/types'
 import { ElMessage } from 'element-plus'
 
@@ -311,5 +312,14 @@ export const api = {
             { value: '公司', label: '公司', type: 'primary' },
             { value: '学校', label: '学校', type: 'warning' },
             { value: '其他', label: '其他', type: 'info' }
-        ])
+        ]),
+
+    getBooksCompare: (bookIds: number[]): Promise<BookCompareResponse> =>
+        instance.post('/books/compare', { book_ids: bookIds }),
+
+    saveCompareList: (bookIds: number[]): Promise<{ message: string }> =>
+        instance.post('/books/compare/save', { book_ids: bookIds }),
+
+    getSavedCompareList: (): Promise<{ book_ids: number[] }> =>
+        instance.get('/books/compare/saved')
 }
