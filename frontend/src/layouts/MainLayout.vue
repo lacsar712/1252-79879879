@@ -17,6 +17,10 @@
             <el-icon><Collection /></el-icon>
             <span>图书列表</span>
           </router-link>
+          <router-link to="/promotions" class="nav-link" active-class="active">
+            <el-icon><Present /></el-icon>
+            <span>活动专题</span>
+          </router-link>
           <router-link v-if="userStore.isAdmin" to="/admin" class="nav-link" active-class="active">
             <el-icon><Setting /></el-icon>
             <span>后台管理</span>
@@ -79,6 +83,7 @@ import {
   Reading,
   HomeFilled,
   Collection,
+  Present,
   Setting,
   ArrowDown,
   User,

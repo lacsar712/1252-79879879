@@ -85,3 +85,81 @@ class BookListResponse(BaseModel):
     page: int
     page_size: int
     items: List[BookResponse]
+
+
+# ========== 活动相关 Schema ==========
+class PromotionBookBase(BaseModel):
+    book_id: int = Field(..., gt=0)
+    promotion_price: float = Field(..., gt=0)
+    promotion_stock: int = Field(default=0, ge=0)
+    purchase_limit: Optional[int] = Field(None, ge=1)
+
+
+class PromotionBookCreate(PromotionBookBase):
+    pass
+
+
+class PromotionBookUpdate(BaseModel):
+    book_id: Optional[int] = Field(None, gt=0)
+    promotion_price: Optional[float] = Field(None, gt=0)
+    promotion_stock: Optional[int] = Field(None, ge=0)
+    purchase_limit: Optional[int] = Field(None, ge=1)
+
+
+class PromotionBookResponse(PromotionBookBase):
+    id: int
+    promotion_id: int
+    sold_stock: int
+    remaining_stock: Optional[int] = None
+    original_price: Optional[float] = None
+    book: Optional[BookResponse] = None
+
+    class Config:
+        from_attributes = True
+
+
+class PromotionBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    cover_image: Optional[str] = None
+    start_time: datetime
+    end_time: datetime
+    description: Optional[str] = None
+    is_displayed: bool = True
+
+
+class PromotionCreate(PromotionBase):
+    books: List[PromotionBookCreate] = Field(default_factory=list)
+
+
+class PromotionUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    cover_image: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    description: Optional[str] = None
+    is_displayed: Optional[bool] = None
+    books: Optional[List[PromotionBookCreate]] = None
+
+
+class PromotionResponse(PromotionBase):
+    id: int
+    status: Optional[str] = None
+    remaining_seconds: Optional[int] = None
+    books: List[PromotionBookResponse] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class PromotionListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[PromotionResponse]
+
+
+class PromotionStockDeductRequest(BaseModel):
+    promotion_book_id: int = Field(..., gt=0)
+    quantity: int = Field(..., ge=1)

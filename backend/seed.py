@@ -5,7 +5,8 @@
 import logging
 from sqlalchemy.orm import Session
 from database import engine, SessionLocal
-from models import Base, User, Book
+from models import Base, User, Book, Promotion, PromotionBook
+from datetime import datetime, timedelta
 from auth import get_password_hash
 
 logging.basicConfig(level=logging.INFO)
@@ -187,11 +188,73 @@ def seed_data():
         for book in books:
             db.add(book)
         
+        db.flush()
+        
+        now = datetime.utcnow()
+        promotions = [
+            Promotion(
+                name="暑期读书狂欢节",
+                cover_image="/api/static/images/s28357056.jpg",
+                start_time=now - timedelta(days=1),
+                end_time=now + timedelta(days=30),
+                description="炎炎夏日，书香相伴！精选图书低至5折，限时抢购，不容错过！",
+                is_displayed=True
+            ),
+            Promotion(
+                name="编程技术进阶周",
+                cover_image="/api/static/images/vue_design.png",
+                start_time=now + timedelta(days=7),
+                end_time=now + timedelta(days=14),
+                description="提升编程技能，精选编程技术图书，助力你的技术成长之路！",
+                is_displayed=True
+            ),
+            Promotion(
+                name="文学经典特卖会",
+                cover_image="/api/static/images/s29053580.jpg",
+                start_time=now - timedelta(days=60),
+                end_time=now - timedelta(days=30),
+                description="品味文学经典，感受文字魅力。已结束的经典活动回顾。",
+                is_displayed=False
+            )
+        ]
+        
+        for promotion in promotions:
+            db.add(promotion)
+        
+        db.flush()
+        
+        promotion_books_data = [
+            {"promotion_idx": 0, "book_idx": 0, "price": 49.00, "stock": 30, "limit": 2},
+            {"promotion_idx": 0, "book_idx": 5, "price": 45.00, "stock": 20, "limit": 1},
+            {"promotion_idx": 0, "book_idx": 8, "price": 19.90, "stock": 50, "limit": 3},
+            {"promotion_idx": 0, "book_idx": 10, "price": 29.00, "stock": 40, "limit": 2},
+            {"promotion_idx": 1, "book_idx": 1, "price": 79.00, "stock": 15, "limit": 1},
+            {"promotion_idx": 1, "book_idx": 6, "price": 59.00, "stock": 25, "limit": 2},
+            {"promotion_idx": 1, "book_idx": 7, "price": 49.00, "stock": 20, "limit": 2},
+            {"promotion_idx": 1, "book_idx": 2, "price": 89.00, "stock": 10, "limit": 1},
+            {"promotion_idx": 2, "book_idx": 10, "price": 25.00, "stock": 50, "limit": 3},
+            {"promotion_idx": 2, "book_idx": 11, "price": 39.00, "stock": 30, "limit": 2},
+        ]
+        
+        for pb_data in promotion_books_data:
+            promotion = promotions[pb_data["promotion_idx"]]
+            book = books[pb_data["book_idx"]]
+            db.add(PromotionBook(
+                promotion_id=promotion.id,
+                book_id=book.id,
+                promotion_price=pb_data["price"],
+                promotion_stock=pb_data["stock"],
+                sold_stock=0,
+                purchase_limit=pb_data["limit"]
+            ))
+        
         db.commit()
         logger.info("演示数据填充成功")
         logger.info(f"  - 创建用户: admin (密码: 123456, 管理员)")
         logger.info(f"  - 创建用户: user (密码: 123456, 普通用户)")
         logger.info(f"  - 创建图书: {len(books)} 本")
+        logger.info(f"  - 创建活动: {len(promotions)} 个")
+        logger.info(f"  - 创建活动图书关联: {len(promotion_books_data)} 条")
         
     except Exception as e:
         logger.error(f"数据填充失败: {e}")

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Book, BookListResponse, BookCreate, LoginResponse, User } from '@/types'
+import type { Book, BookListResponse, BookCreate, LoginResponse, User, Promotion, PromotionListResponse, PromotionCreate, PromotionUpdate } from '@/types'
 import { ElMessage } from 'element-plus'
 
 const instance = axios.create({
@@ -62,5 +62,23 @@ export const api = {
         instance.delete(`/books/${id}`),
 
     getCategories: (): Promise<string[]> =>
-        instance.get('/books/categories/list')
+        instance.get('/books/categories/list'),
+
+    getPromotions: (params?: { page?: number; page_size?: number; status?: string; is_displayed?: boolean }): Promise<PromotionListResponse> =>
+        instance.get('/promotions', { params }),
+
+    getPromotion: (id: number): Promise<Promotion> =>
+        instance.get(`/promotions/${id}`),
+
+    createPromotion: (promotion: PromotionCreate): Promise<Promotion> =>
+        instance.post('/promotions', promotion),
+
+    updatePromotion: (id: number, promotion: PromotionUpdate): Promise<Promotion> =>
+        instance.put(`/promotions/${id}`, promotion),
+
+    deletePromotion: (id: number): Promise<void> =>
+        instance.delete(`/promotions/${id}`),
+
+    deductPromotionStock: (promotionId: number, promotionBookId: number, quantity: number): Promise<Promotion> =>
+        instance.post(`/promotions/${promotionId}/deduct-stock`, { promotion_book_id: promotionBookId, quantity })
 }

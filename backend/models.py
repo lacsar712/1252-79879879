@@ -39,3 +39,33 @@ class Book(Base):
     category = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Promotion(Base):
+    """活动专题模型"""
+    __tablename__ = "promotions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(200), nullable=False, index=True)
+    cover_image = Column(String(500), nullable=True)
+    start_time = Column(DateTime, nullable=False, index=True)
+    end_time = Column(DateTime, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    is_displayed = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PromotionBook(Base):
+    """活动图书关联模型"""
+    __tablename__ = "promotion_books"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    promotion_id = Column(Integer, nullable=False, index=True)
+    book_id = Column(Integer, nullable=False, index=True)
+    promotion_price = Column(Float, nullable=False)
+    promotion_stock = Column(Integer, nullable=False, default=0)
+    sold_stock = Column(Integer, nullable=False, default=0)
+    purchase_limit = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

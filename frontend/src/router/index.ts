@@ -25,6 +25,18 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: '图书详情' }
             },
             {
+                path: 'promotions',
+                name: 'Promotions',
+                component: () => import('@/views/Promotions.vue'),
+                meta: { title: '活动专题' }
+            },
+            {
+                path: 'promotions/:id',
+                name: 'PromotionDetail',
+                component: () => import('@/views/PromotionDetail.vue'),
+                meta: { title: '活动详情' }
+            },
+            {
                 path: 'admin',
                 name: 'Admin',
                 component: () => import('@/views/Admin.vue'),
@@ -52,7 +64,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
     // 更新页面标题
     document.title = `${to.meta.title || '在线书店'} - 现代化在线书店`
 

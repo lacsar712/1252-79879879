@@ -15,6 +15,7 @@ from models import Base
 from seed import init_db, seed_data
 from routes.auth import router as auth_router
 from routes.books import router as books_router
+from routes.promotions import router as promotions_router
 
 # 配置日志
 logging.basicConfig(
@@ -69,6 +70,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # 注册路由
 app.include_router(auth_router)
 app.include_router(books_router)
+app.include_router(promotions_router)
 
 # 挂载静态文件
 # 确保static目录存在
