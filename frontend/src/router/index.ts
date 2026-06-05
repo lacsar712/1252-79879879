@@ -49,6 +49,12 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: '后台管理', requiresAdmin: true }
             },
             {
+                path: 'announcements',
+                name: 'AnnouncementManagement',
+                component: () => import('@/views/AnnouncementManagement.vue'),
+                meta: { title: '公告管理', requiresAdmin: true }
+            },
+            {
                 path: 'feedback/submit',
                 name: 'FeedbackSubmit',
                 component: () => import('@/views/FeedbackSubmit.vue'),

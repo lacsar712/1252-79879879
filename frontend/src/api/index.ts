@@ -18,7 +18,10 @@ import type {
     APIKey, APIKeyListResponse, APIKeyCreate, APIKeyUpdate,
     APIKeyCreateResponse, APIKeyRotateResponse,
     APIKeyCallLogListResponse,
-    APIKeyAccessScopeOption, APIKeyRatePeriodOption, APIKeyStatusOption
+    APIKeyAccessScopeOption, APIKeyRatePeriodOption, APIKeyStatusOption,
+    Announcement, AnnouncementListResponse, AnnouncementCreate, AnnouncementUpdate,
+    AnnouncementDisplayPositionOption, AnnouncementDisplayTypeOption,
+    AnnouncementTargetUserTypeOption, AnnouncementStatusOption
 } from '@/types'
 import { ElMessage } from 'element-plus'
 
@@ -383,5 +386,48 @@ export const api = {
         instance.get('/open/books', {
             params,
             headers: { 'X-API-Key': apiKey }
-        })
+        }),
+
+    // 公告相关
+    getDisplayAnnouncements: (position: string): Promise<Announcement[]> =>
+        instance.get('/announcements/display', { params: { position } }),
+
+    closeAnnouncement: (id: number): Promise<void> =>
+        instance.post(`/announcements/${id}/close`),
+
+    getAnnouncements: (params?: {
+        page?: number
+        page_size?: number
+        status?: string
+        position?: string
+        keyword?: string
+    }): Promise<AnnouncementListResponse> =>
+        instance.get('/announcements', { params }),
+
+    getAnnouncement: (id: number): Promise<Announcement> =>
+        instance.get(`/announcements/${id}`),
+
+    createAnnouncement: (data: AnnouncementCreate): Promise<Announcement> =>
+        instance.post('/announcements', data),
+
+    updateAnnouncement: (id: number, data: AnnouncementUpdate): Promise<Announcement> =>
+        instance.put(`/announcements/${id}`, data),
+
+    deleteAnnouncement: (id: number): Promise<void> =>
+        instance.delete(`/announcements/${id}`),
+
+    toggleAnnouncement: (id: number): Promise<Announcement> =>
+        instance.post(`/announcements/${id}/toggle`),
+
+    getAnnouncementPositions: (): Promise<AnnouncementDisplayPositionOption[]> =>
+        instance.get('/announcements/positions/list'),
+
+    getAnnouncementTypes: (): Promise<AnnouncementDisplayTypeOption[]> =>
+        instance.get('/announcements/types/list'),
+
+    getAnnouncementTargetUserTypes: (): Promise<AnnouncementTargetUserTypeOption[]> =>
+        instance.get('/announcements/target-user-types/list'),
+
+    getAnnouncementStatuses: (): Promise<AnnouncementStatusOption[]> =>
+        instance.get('/announcements/statuses/list')
 }

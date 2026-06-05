@@ -733,3 +733,80 @@ class OpenAPIBookListResponse(BaseModel):
     page: int
     page_size: int
     items: List[OpenAPIBookResponse]
+
+
+# ========== 公告相关 Schema ==========
+class AnnouncementBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1)
+    display_position: str = Field(..., max_length=50)
+    display_type: str = Field("banner", max_length=20)
+    start_time: datetime
+    end_time: datetime
+    is_pinned: bool = False
+    priority: int = Field(0, ge=0, le=100)
+    target_user_type: str = Field("all", max_length=20)
+    is_enabled: bool = True
+
+
+class AnnouncementCreate(AnnouncementBase):
+    pass
+
+
+class AnnouncementUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    content: Optional[str] = None
+    display_position: Optional[str] = Field(None, max_length=50)
+    display_type: Optional[str] = Field(None, max_length=20)
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    is_pinned: Optional[bool] = None
+    priority: Optional[int] = Field(None, ge=0, le=100)
+    target_user_type: Optional[str] = Field(None, max_length=20)
+    is_enabled: Optional[bool] = None
+
+
+class AnnouncementResponse(AnnouncementBase):
+    id: int
+    created_by: int
+    created_by_name: Optional[str] = None
+    view_count: int
+    close_count: int
+    status: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AnnouncementListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[AnnouncementResponse]
+
+
+class AnnouncementCloseRequest(BaseModel):
+    pass
+
+
+class AnnouncementDisplayPositionOption(BaseModel):
+    value: str
+    label: str
+
+
+class AnnouncementDisplayTypeOption(BaseModel):
+    value: str
+    label: str
+
+
+class AnnouncementTargetUserTypeOption(BaseModel):
+    value: str
+    label: str
+
+
+class AnnouncementStatusOption(BaseModel):
+    value: str
+    label: str
+    type: str

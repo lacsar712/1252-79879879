@@ -641,6 +641,35 @@
         </div>
       </el-tab-pane>
 
+      <el-tab-pane label="公告管理" name="announcements">
+        <div class="admin-header">
+          <h1>公告管理</h1>
+          <el-button type="primary" @click="router.push('/announcements')">
+            <el-icon><PromotionIcon /></el-icon>
+            进入公告管理
+          </el-button>
+        </div>
+        <div class="announcement-intro">
+          <el-alert
+            title="公告管理功能"
+            type="info"
+            :closable="false"
+            show-icon
+          >
+            <template #default>
+              <p>公告管理功能支持：</p>
+              <ul>
+                <li>发布公告，配置标题、内容、展示位置</li>
+                <li>设置开始时间、结束时间、置顶状态、优先级</li>
+                <li>选择目标用户类型（所有用户/已登录/游客/管理员）</li>
+                <li>支持横幅、弹窗、列表三种展示方式</li>
+                <li>用户可关闭公告，有效期内保留关闭状态</li>
+              </ul>
+            </template>
+          </el-alert>
+        </div>
+      </el-tab-pane>
+
       <el-tab-pane label="采购入库" name="purchase-orders">
         <div class="admin-header">
           <h1>采购入库管理</h1>
@@ -3460,5 +3489,19 @@ function formatDate(date: string | Date, format: string = 'datetime'): string {
 .stock-taking-dialog :deep(.el-dialog__body) {
   max-height: 75vh;
   overflow-y: auto;
+}
+
+.announcement-intro {
+  margin-top: 16px;
+}
+
+.announcement-intro ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+.announcement-intro li {
+  line-height: 2;
+  color: var(--text-secondary);
 }
 </style>

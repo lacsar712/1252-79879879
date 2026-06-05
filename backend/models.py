@@ -284,3 +284,36 @@ class APIKeyCallLog(Base):
     error_message = Column(String(1000), nullable=True)
     request_params = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class Announcement(Base):
+    """公告模型"""
+    __tablename__ = "announcements"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    title = Column(String(200), nullable=False, index=True)
+    content = Column(Text, nullable=False)
+    display_position = Column(String(50), nullable=False, index=True)
+    display_type = Column(String(20), nullable=False, default="banner")
+    start_time = Column(DateTime, nullable=False, index=True)
+    end_time = Column(DateTime, nullable=False, index=True)
+    is_pinned = Column(Boolean, default=False, index=True)
+    priority = Column(Integer, default=0, index=True)
+    target_user_type = Column(String(20), nullable=False, default="all")
+    is_enabled = Column(Boolean, default=True, index=True)
+    created_by = Column(Integer, nullable=False, index=True)
+    view_count = Column(Integer, default=0)
+    close_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class AnnouncementCloseRecord(Base):
+    """公告关闭记录模型"""
+    __tablename__ = "announcement_close_records"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    announcement_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    closed_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

@@ -23,6 +23,7 @@ from routes.purchase_orders import router as purchase_orders_router
 from routes.addresses import router as addresses_router
 from routes.api_keys import router as api_keys_router
 from routes.open_api import router as open_api_router
+from routes.announcements import router as announcements_router
 
 # 配置日志
 logging.basicConfig(
@@ -85,6 +86,7 @@ app.include_router(purchase_orders_router)
 app.include_router(addresses_router)
 app.include_router(api_keys_router)
 app.include_router(open_api_router)
+app.include_router(announcements_router)
 
 # 挂载静态文件
 # 确保static目录存在

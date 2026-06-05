@@ -81,6 +81,7 @@
     
     <!-- 主内容区 -->
     <main class="main-content">
+      <AnnouncementContainer :position="currentPosition" />
       <router-view v-slot="{ Component }">
         <transition name="page-fade" mode="out-in">
           <component :is="Component" />
@@ -99,11 +100,13 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useCompareStore } from '@/stores/compare'
 import { ElMessage } from 'element-plus'
 import CompareBar from '@/components/CompareBar.vue'
+import AnnouncementContainer from '@/components/AnnouncementContainer.vue'
 import {
   Reading,
   HomeFilled,
@@ -120,8 +123,17 @@ import {
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const compareStore = useCompareStore()
+
+const currentPosition = computed(() => {
+  const path = route.path
+  if (path === '/') return 'home'
+  if (path === '/books') return 'book_list'
+  if (path.startsWith('/books/') && !path.includes('/reader/')) return 'book_detail'
+  return 'global'
+})
 
 function handleLogout() {
   userStore.logout()

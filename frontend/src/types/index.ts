@@ -670,3 +670,78 @@ export interface OpenAPIBookListResponse {
     page_size: number
     items: OpenAPIBook[]
 }
+
+export interface Announcement {
+    id: number
+    title: string
+    content: string
+    display_position: string
+    display_type: 'banner' | 'modal' | 'list'
+    start_time: string
+    end_time: string
+    is_pinned: boolean
+    priority: number
+    target_user_type: string
+    is_enabled: boolean
+    created_by: number
+    created_by_name: string | null
+    view_count: number
+    close_count: number
+    status: 'pending' | 'active' | 'ended' | 'disabled' | null
+    created_at: string
+    updated_at: string
+}
+
+export interface AnnouncementListResponse {
+    total: number
+    page: number
+    page_size: number
+    items: Announcement[]
+}
+
+export interface AnnouncementCreate {
+    title: string
+    content: string
+    display_position: string
+    display_type: string
+    start_time: string
+    end_time: string
+    is_pinned: boolean
+    priority: number
+    target_user_type: string
+    is_enabled: boolean
+}
+
+export interface AnnouncementUpdate {
+    title?: string
+    content?: string
+    display_position?: string
+    display_type?: string
+    start_time?: string
+    end_time?: string
+    is_pinned?: boolean
+    priority?: number
+    target_user_type?: string
+    is_enabled?: boolean
+}
+
+export interface AnnouncementDisplayPositionOption {
+    value: string
+    label: string
+}
+
+export interface AnnouncementDisplayTypeOption {
+    value: string
+    label: string
+}
+
+export interface AnnouncementTargetUserTypeOption {
+    value: string
+    label: string
+}
+
+export interface AnnouncementStatusOption {
+    value: string
+    label: string
+    type: string
+}
