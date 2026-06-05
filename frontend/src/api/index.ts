@@ -4,7 +4,9 @@ import type {
     Promotion, PromotionListResponse, PromotionCreate, PromotionUpdate,
     Feedback, FeedbackListResponse, FeedbackCreate, FeedbackReplySubmit,
     FeedbackTypeOption, FeedbackStatusOption, FeedbackUploadResponse,
-    FeedbackReply
+    FeedbackReply,
+    BookChapter, BookChapterPublic, BookChapterCreate, BookChapterUpdate,
+    BookChapterListResponse, BookChapterPublicListResponse
 } from '@/types'
 import { ElMessage } from 'element-plus'
 
@@ -137,5 +139,37 @@ export const api = {
         instance.get('/feedbacks/types/list'),
 
     getFeedbackStatuses: (): Promise<FeedbackStatusOption[]> =>
-        instance.get('/feedbacks/statuses/list')
+        instance.get('/feedbacks/statuses/list'),
+
+    // 试读章节相关 - 公开接口
+    getPublicChapters: (bookId: number): Promise<BookChapterPublicListResponse> =>
+        instance.get(`/chapters/public/${bookId}`),
+
+    getPublicChapter: (bookId: number, chapterId: number): Promise<BookChapterPublic> =>
+        instance.get(`/chapters/public/${bookId}/${chapterId}`),
+
+    // 试读章节相关 - 管理接口
+    getAdminChapters: (bookId: number): Promise<BookChapterListResponse> =>
+        instance.get(`/chapters/admin/${bookId}`),
+
+    getAdminChapter: (bookId: number, chapterId: number): Promise<BookChapter> =>
+        instance.get(`/chapters/admin/${bookId}/${chapterId}`),
+
+    createChapter: (chapter: BookChapterCreate): Promise<BookChapter> =>
+        instance.post('/chapters', chapter),
+
+    updateChapter: (chapterId: number, chapter: BookChapterUpdate): Promise<BookChapter> =>
+        instance.put(`/chapters/${chapterId}`, chapter),
+
+    toggleChapterPublic: (chapterId: number): Promise<BookChapter> =>
+        instance.patch(`/chapters/${chapterId}/toggle-public`),
+
+    updateChapterSort: (chapterId: number, sortOrder: number): Promise<BookChapter> =>
+        instance.patch(`/chapters/${chapterId}/sort`, null, { params: { sort_order: sortOrder } }),
+
+    deleteChapter: (chapterId: number): Promise<void> =>
+        instance.delete(`/chapters/${chapterId}`),
+
+    previewChapter: (chapterId: number): Promise<BookChapter> =>
+        instance.get(`/chapters/preview/${chapterId}`)
 }

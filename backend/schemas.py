@@ -261,3 +261,55 @@ class FeedbackUploadResponse(BaseModel):
     file_path: str
     file_size: int
     file_type: str
+
+
+# ========== 试读章节相关 Schema ==========
+class BookChapterBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1)
+    sort_order: int = Field(default=0, ge=0)
+    is_public: bool = True
+
+
+class BookChapterCreate(BookChapterBase):
+    book_id: int = Field(..., gt=0)
+
+
+class BookChapterUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    content: Optional[str] = None
+    sort_order: Optional[int] = Field(None, ge=0)
+    is_public: Optional[bool] = None
+
+
+class BookChapterResponse(BookChapterBase):
+    id: int
+    book_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BookChapterPublicResponse(BaseModel):
+    id: int
+    book_id: int
+    title: str
+    content: str
+    sort_order: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BookChapterListResponse(BaseModel):
+    total: int
+    items: List[BookChapterResponse]
+
+
+class BookChapterPublicListResponse(BaseModel):
+    total: int
+    items: List[BookChapterPublicResponse]

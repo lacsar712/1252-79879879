@@ -202,3 +202,49 @@ export interface FeedbackUploadResponse {
     file_size: number
     file_type: string
 }
+
+export interface BookChapter {
+    id: number
+    book_id: number
+    title: string
+    content: string
+    sort_order: number
+    is_public: boolean
+    created_at: string
+    updated_at: string
+}
+
+export interface BookChapterPublic {
+    id: number
+    book_id: number
+    title: string
+    content: string
+    sort_order: number
+    created_at: string
+    updated_at: string
+}
+
+export interface BookChapterCreate {
+    book_id: number
+    title: string
+    content: string
+    sort_order?: number
+    is_public?: boolean
+}
+
+export interface BookChapterUpdate {
+    title?: string
+    content?: string
+    sort_order?: number
+    is_public?: boolean
+}
+
+export interface BookChapterListResponse {
+    total: number
+    items: BookChapter[]
+}
+
+export interface BookChapterPublicListResponse {
+    total: number
+    items: BookChapterPublic[]
+}

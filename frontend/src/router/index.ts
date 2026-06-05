@@ -25,6 +25,12 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: '图书详情' }
             },
             {
+                path: 'books/:bookId/reader/:chapterId?',
+                name: 'BookReader',
+                component: () => import('@/views/BookReader.vue'),
+                meta: { title: '在线阅读' }
+            },
+            {
                 path: 'promotions',
                 name: 'Promotions',
                 component: () => import('@/views/Promotions.vue'),

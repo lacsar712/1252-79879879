@@ -215,6 +215,115 @@
         </div>
       </el-tab-pane>
 
+      <el-tab-pane label="章节管理" name="chapters">
+        <div class="admin-header">
+          <h1>章节管理</h1>
+        </div>
+        
+        <div class="search-bar">
+          <el-select
+            v-model="chapterBookFilter"
+            placeholder="选择图书"
+            filterable
+            clearable
+            @change="fetchChapters"
+            style="width: 300px"
+          >
+            <el-option
+              v-for="b in allBooks"
+              :key="b.id"
+              :label="b.title"
+              :value="b.id"
+            />
+          </el-select>
+          <el-button
+            type="primary"
+            @click="handleAddChapter"
+            :disabled="!chapterBookFilter"
+          >
+            <el-icon><Plus /></el-icon>
+            添加章节
+          </el-button>
+        </div>
+        
+        <el-alert
+          v-if="!chapterBookFilter"
+          title="请先选择要管理章节的图书"
+          type="info"
+          show-icon
+          style="margin-bottom: 16px"
+        />
+        
+        <el-table
+          v-if="chapterBookFilter"
+          :data="chapters"
+          v-loading="loadingChapters"
+          stripe
+          style="width: 100%"
+          row-key="id"
+        >
+          <el-table-column prop="id" label="ID" width="70" />
+          <el-table-column label="排序" width="100">
+            <template #default="{ row }">
+              <el-input-number
+                v-model="row.sort_order"
+                :min="0"
+                size="small"
+                controls-position="right"
+                style="width: 90px"
+                @change="(val: number) => handleSortChange(row.id, val)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column prop="title" label="章节标题" min-width="200">
+            <template #default="{ row }">
+              <span class="chapter-title">{{ row.title }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="公开状态" width="100">
+            <template #default="{ row }">
+              <el-tag
+                :type="row.is_public ? 'success' : 'info'"
+                size="small"
+              >
+                {{ row.is_public ? '公开' : '隐藏' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="updated_at" label="更新时间" width="180">
+            <template #default="{ row }">
+              {{ formatDate(row.updated_at) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="280" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" @click="handleEditChapter(row)">
+                编辑
+              </el-button>
+              <el-button link type="success" @click="handlePreviewChapter(row)">
+                预览
+              </el-button>
+              <el-button link type="warning" @click="handleTogglePublic(row)">
+                {{ row.is_public ? '隐藏' : '公开' }}
+              </el-button>
+              <el-popconfirm
+                title="确定要删除此章节吗？"
+                @confirm="handleDeleteChapter(row.id)"
+              >
+                <template #reference>
+                  <el-button type="danger" link>删除</el-button>
+                </template>
+              </el-popconfirm>
+            </template>
+          </el-table-column>
+        </el-table>
+        
+        <el-empty
+          v-if="chapterBookFilter && chapters.length === 0 && !loadingChapters"
+          description="暂无章节，点击上方按钮添加"
+        />
+      </el-tab-pane>
+
       <el-tab-pane label="客服反馈" name="feedbacks">
         <div class="admin-header">
           <h1>客服反馈管理</h1>
@@ -782,6 +891,90 @@
       :initial-index="feedbackPreviewIndex"
       @close="feedbackPreviewVisible = false"
     />
+
+    <el-dialog
+      v-model="chapterDialogVisible"
+      :title="isEditChapter ? '编辑章节' : '添加章节'"
+      width="700px"
+      destroy-on-close
+      class="chapter-dialog"
+    >
+      <el-form
+        ref="chapterFormRef"
+        :model="chapterForm"
+        :rules="chapterRules"
+        label-width="80px"
+      >
+        <el-form-item label="章节标题" prop="title">
+          <el-input v-model="chapterForm.title" placeholder="请输入章节标题" maxlength="200" show-word-limit />
+        </el-form-item>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="排序" prop="sort_order">
+              <el-input-number
+                v-model="chapterForm.sort_order"
+                :min="0"
+                controls-position="right"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="公开状态" prop="is_public">
+              <el-switch
+                v-model="chapterForm.is_public"
+                active-text="公开"
+                inactive-text="隐藏"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-form-item label="正文内容" prop="content">
+          <el-input
+            v-model="chapterForm.content"
+            type="textarea"
+            :rows="15"
+            placeholder="请输入章节正文内容，支持长文本录入..."
+            maxlength="50000"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="chapterDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submittingChapter" @click="handleSubmitChapter">
+          {{ isEditChapter ? '保存' : '添加' }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="chapterPreviewVisible"
+      :title="previewingChapter?.title || '章节预览'"
+      width="800px"
+      destroy-on-close
+      class="chapter-preview-dialog"
+    >
+      <div v-if="previewingChapter" class="chapter-preview-content">
+        <div class="preview-header">
+          <el-tag :type="previewingChapter.is_public ? 'success' : 'info'" size="large">
+            {{ previewingChapter.is_public ? '公开章节' : '隐藏章节' }}
+          </el-tag>
+          <span class="preview-meta">
+            更新时间：{{ formatDate(previewingChapter.updated_at) }}
+          </span>
+        </div>
+        <div class="preview-body">
+          <h2 class="preview-title">{{ previewingChapter.title }}</h2>
+          <div class="preview-text">
+            {{ previewingChapter.content }}
+          </div>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -789,7 +982,7 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
-import type { Book, BookCreate, Promotion, PromotionCreate, Feedback, FeedbackTypeOption, FeedbackStatusOption, FeedbackReplySubmit } from '@/types'
+import type { Book, BookCreate, Promotion, PromotionCreate, Feedback, FeedbackTypeOption, FeedbackStatusOption, FeedbackReplySubmit, BookChapter, BookChapterCreate } from '@/types'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Search, Picture, User, Clock, Phone, ShoppingCart, Collection, ChatDotRound, Promotion as PromotionIcon, Service, Edit, Check } from '@element-plus/icons-vue'
 
@@ -884,6 +1077,30 @@ const feedbackPreviewVisible = ref(false)
 const feedbackPreviewImages = ref<string[]>([])
 const feedbackPreviewIndex = ref(0)
 
+const loadingChapters = ref(false)
+const submittingChapter = ref(false)
+const chapters = ref<BookChapter[]>([])
+const chapterBookFilter = ref<number | null>(null)
+const chapterDialogVisible = ref(false)
+const isEditChapter = ref(false)
+const editingChapterId = ref<number | null>(null)
+const chapterFormRef = ref<FormInstance>()
+const chapterPreviewVisible = ref(false)
+const previewingChapter = ref<BookChapter | null>(null)
+
+const chapterForm = reactive<BookChapterCreate>({
+  book_id: 0,
+  title: '',
+  content: '',
+  sort_order: 0,
+  is_public: true
+})
+
+const chapterRules: FormRules = {
+  title: [{ required: true, message: '请输入章节标题', trigger: 'blur' }],
+  content: [{ required: true, message: '请输入章节内容', trigger: 'blur' }]
+}
+
 const Refresh = { name: 'Refresh' }
 
 onMounted(async () => {
@@ -896,6 +1113,9 @@ watch(activeTab, (newTab) => {
   }
   if (newTab === 'feedbacks' && feedbacks.value.length === 0) {
     Promise.all([fetchFeedbackTypes(), fetchFeedbackStatuses(), fetchFeedbacks()])
+  }
+  if (newTab === 'chapters' && allBooks.value.length === 0) {
+    fetchAllBooks()
   }
 })
 
@@ -1349,6 +1569,131 @@ function getPublicReplyCount(row: Feedback): number {
 function getInternalReplyCount(row: Feedback): number {
   return row.replies.filter(r => r.is_internal).length
 }
+
+async function fetchChapters() {
+  if (!chapterBookFilter.value) return
+  
+  loadingChapters.value = true
+  try {
+    const response = await api.getAdminChapters(chapterBookFilter.value)
+    chapters.value = response.items
+  } catch (error) {
+    console.error('获取章节列表失败:', error)
+  } finally {
+    loadingChapters.value = false
+  }
+}
+
+function handleAddChapter() {
+  if (!chapterBookFilter.value) return
+  
+  isEditChapter.value = false
+  editingChapterId.value = null
+  resetChapterForm()
+  chapterForm.book_id = chapterBookFilter.value
+  chapterDialogVisible.value = true
+}
+
+function handleEditChapter(chapter: BookChapter) {
+  isEditChapter.value = true
+  editingChapterId.value = chapter.id
+  Object.assign(chapterForm, {
+    book_id: chapter.book_id,
+    title: chapter.title,
+    content: chapter.content,
+    sort_order: chapter.sort_order,
+    is_public: chapter.is_public
+  })
+  chapterDialogVisible.value = true
+}
+
+async function handlePreviewChapter(chapter: BookChapter) {
+  try {
+    const fullChapter = await api.previewChapter(chapter.id)
+    previewingChapter.value = fullChapter
+    chapterPreviewVisible.value = true
+  } catch (error) {
+    console.error('预览章节失败:', error)
+    ElMessage.error('预览失败')
+  }
+}
+
+async function handleTogglePublic(chapter: BookChapter) {
+  try {
+    await ElMessageBox.confirm(
+      `确认将章节「${chapter.title}」${chapter.is_public ? '隐藏' : '公开'}吗？`,
+      '确认操作',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    const updated = await api.toggleChapterPublic(chapter.id)
+    chapter.is_public = updated.is_public
+    ElMessage.success(`${updated.is_public ? '公开' : '隐藏'}成功`)
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('操作失败:', error)
+      ElMessage.error('操作失败')
+    }
+  }
+}
+
+async function handleSortChange(chapterId: number, sortOrder: number) {
+  try {
+    await api.updateChapterSort(chapterId, sortOrder)
+  } catch (error) {
+    console.error('更新排序失败:', error)
+    ElMessage.error('更新排序失败')
+    fetchChapters()
+  }
+}
+
+async function handleDeleteChapter(id: number) {
+  try {
+    await api.deleteChapter(id)
+    ElMessage.success('删除成功')
+    fetchChapters()
+  } catch (error) {
+    console.error('删除失败:', error)
+  }
+}
+
+async function handleSubmitChapter() {
+  if (!chapterFormRef.value) return
+  
+  await chapterFormRef.value.validate(async (valid) => {
+    if (!valid) return
+    
+    submittingChapter.value = true
+    try {
+      if (isEditChapter.value && editingChapterId.value) {
+        await api.updateChapter(editingChapterId.value, chapterForm)
+        ElMessage.success('更新成功')
+      } else {
+        await api.createChapter(chapterForm)
+        ElMessage.success('添加成功')
+      }
+      chapterDialogVisible.value = false
+      fetchChapters()
+    } catch (error) {
+      console.error('操作失败:', error)
+    } finally {
+      submittingChapter.value = false
+    }
+  })
+}
+
+function resetChapterForm() {
+  Object.assign(chapterForm, {
+    book_id: chapterBookFilter.value || 0,
+    title: '',
+    content: '',
+    sort_order: 0,
+    is_public: true
+  })
+}
 </script>
 
 <style scoped>
@@ -1648,5 +1993,56 @@ function getInternalReplyCount(row: Feedback): number {
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
+}
+
+.chapter-title {
+  font-weight: 500;
+}
+
+.chapter-dialog :deep(.el-dialog__body) {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.chapter-preview-dialog :deep(.el-dialog__body) {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.chapter-preview-content .preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.chapter-preview-content .preview-meta {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.chapter-preview-content .preview-body {
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+}
+
+.chapter-preview-content .preview-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.chapter-preview-content .preview-text {
+  font-size: 16px;
+  line-height: 2;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-indent: 2em;
 }
 </style>

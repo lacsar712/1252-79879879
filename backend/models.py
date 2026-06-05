@@ -113,3 +113,17 @@ class FeedbackReply(Base):
     is_internal = Column(Boolean, default=False, index=True)
     status_change = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class BookChapter(Base):
+    """试读章节模型"""
+    __tablename__ = "book_chapters"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    book_id = Column(Integer, nullable=False, index=True)
+    title = Column(String(200), nullable=False, index=True)
+    content = Column(Text, nullable=False)
+    sort_order = Column(Integer, default=0, index=True)
+    is_public = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
