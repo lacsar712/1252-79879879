@@ -106,6 +106,7 @@ import { useRouter } from 'vue-router'
 import { api } from '@/api'
 import { useCompareStore } from '@/stores/compare'
 import type { Book } from '@/types'
+import { buildPaginationParams } from '@/utils/pagination'
 import { Search, View, Histogram, Check } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -128,12 +129,14 @@ onMounted(async () => {
 async function fetchBooks() {
   loading.value = true
   try {
-    const response = await api.getBooks({
-      page: currentPage.value,
-      page_size: pageSize.value,
-      search: searchQuery.value || undefined,
-      category: selectedCategory.value || undefined
-    })
+    const response = await api.getBooks(buildPaginationParams(
+      currentPage.value,
+      pageSize.value,
+      {
+        search: searchQuery.value,
+        category: selectedCategory.value
+      }
+    ))
     books.value = response.items
     total.value = response.total
   } catch (error) {

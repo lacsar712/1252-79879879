@@ -1750,6 +1750,7 @@
 import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
+import { buildPaginationParams, buildDateRangeParams } from '@/utils/pagination'
 import type { Book, BookCreate, Promotion, PromotionCreate, Feedback, FeedbackTypeOption, FeedbackStatusOption, FeedbackReplySubmit, BookChapter, BookChapterCreate, StockTaking, StockTakingCreate, StockTakingScopeOption, Supplier, SupplierCreate, PurchaseOrder, PurchaseOrderCreate, PurchaseOrderStatusOption, SupplierOption } from '@/types'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Search, Picture, User, Clock, Phone, ShoppingCart, Collection, ChatDotRound, Promotion as PromotionIcon, Service, Edit, Check, ArrowDown, UserFilled, Upload, List } from '@element-plus/icons-vue'
@@ -2010,11 +2011,11 @@ watch(activeTab, (newTab) => {
 async function fetchBooks() {
   loadingBooks.value = true
   try {
-    const response = await api.getBooks({
-      page: currentPage.value,
-      page_size: pageSize.value,
-      search: searchQuery.value || undefined
-    })
+    const response = await api.getBooks(buildPaginationParams(
+      currentPage.value,
+      pageSize.value,
+      { search: searchQuery.value }
+    ))
     books.value = response.items
     totalBooks.value = response.total
   } catch (error) {
@@ -2036,12 +2037,14 @@ async function fetchAllBooks() {
 async function fetchPromotions() {
   loadingPromotions.value = true
   try {
-    const response = await api.getPromotions({
-      page: promotionPage.value,
-      page_size: promotionPageSize.value,
-      status: promotionStatus.value || undefined,
-      is_displayed: promotionDisplayed.value
-    })
+    const response = await api.getPromotions(buildPaginationParams(
+      promotionPage.value,
+      promotionPageSize.value,
+      {
+        status: promotionStatus.value,
+        is_displayed: promotionDisplayed.value
+      }
+    ))
     promotions.value = response.items
     totalPromotions.value = response.total
   } catch (error) {
@@ -2281,15 +2284,16 @@ async function fetchFeedbackStatuses() {
 async function fetchFeedbacks() {
   loadingFeedbacks.value = true
   try {
-    const response = await api.getAllFeedbacks({
-      page: feedbackPage.value,
-      page_size: feedbackPageSize.value,
-      status: feedbackStatusFilter.value || undefined,
-      type: feedbackTypeFilter.value || undefined,
-      start_date: feedbackStartDate.value || undefined,
-      end_date: feedbackEndDate.value || undefined,
-      keyword: feedbackKeyword.value || undefined
-    })
+    const response = await api.getAllFeedbacks(buildPaginationParams(
+      feedbackPage.value,
+      feedbackPageSize.value,
+      {
+        status: feedbackStatusFilter.value,
+        type: feedbackTypeFilter.value,
+        keyword: feedbackKeyword.value,
+        ...buildDateRangeParams([feedbackStartDate.value, feedbackEndDate.value])
+      }
+    ))
     feedbacks.value = response.items
     totalFeedbacks.value = response.total
   } catch (error) {
@@ -2625,12 +2629,14 @@ async function fetchStockTakingScopes() {
 async function fetchStockTakings() {
   loadingStockTakings.value = true
   try {
-    const response = await api.getStockTakings({
-      page: stockTakingPage.value,
-      page_size: stockTakingPageSize.value,
-      status: stockTakingStatus.value || undefined,
-      keyword: stockTakingKeyword.value || undefined
-    })
+    const response = await api.getStockTakings(buildPaginationParams(
+      stockTakingPage.value,
+      stockTakingPageSize.value,
+      {
+        status: stockTakingStatus.value,
+        keyword: stockTakingKeyword.value
+      }
+    ))
     stockTakings.value = response.items
     totalStockTakings.value = response.total
   } catch (error) {
@@ -2790,15 +2796,16 @@ async function fetchPurchaseOrderStatuses() {
 async function fetchPurchaseOrders() {
   loadingPurchaseOrders.value = true
   try {
-    const response = await api.getPurchaseOrders({
-      page: purchaseOrderPage.value,
-      page_size: purchaseOrderPageSize.value,
-      status: purchaseOrderStatus.value || undefined,
-      supplier_id: purchaseOrderSupplier.value,
-      keyword: purchaseOrderKeyword.value || undefined,
-      start_date: purchaseOrderStartDate.value || undefined,
-      end_date: purchaseOrderEndDate.value || undefined
-    })
+    const response = await api.getPurchaseOrders(buildPaginationParams(
+      purchaseOrderPage.value,
+      purchaseOrderPageSize.value,
+      {
+        status: purchaseOrderStatus.value,
+        supplier_id: purchaseOrderSupplier.value,
+        keyword: purchaseOrderKeyword.value,
+        ...buildDateRangeParams([purchaseOrderStartDate.value, purchaseOrderEndDate.value])
+      }
+    ))
     purchaseOrders.value = response.items
     totalPurchaseOrders.value = response.total
   } catch (error) {
@@ -2961,11 +2968,11 @@ function resetPurchaseOrderForm() {
 async function fetchSuppliers() {
   loadingSuppliers.value = true
   try {
-    const response = await api.getSuppliers({
-      page: supplierPage.value,
-      page_size: supplierPageSize.value,
-      keyword: supplierSearch.value || undefined
-    })
+    const response = await api.getSuppliers(buildPaginationParams(
+      supplierPage.value,
+      supplierPageSize.value,
+      { keyword: supplierSearch.value }
+    ))
     suppliers.value = response.items
     totalSuppliers.value = response.total
   } catch (error) {

@@ -1,4 +1,5 @@
-import axios from 'axios'
+import { get, post, put, del, patch } from '@/utils/request'
+import { buildPaginationParams } from '@/utils/pagination'
 import type { 
     Book, BookListResponse, BookCreate, LoginResponse, User, 
     Promotion, PromotionListResponse, PromotionCreate, PromotionUpdate,
@@ -27,99 +28,81 @@ import type {
     BookImportRecordListResponse, BookImportRecordDetail,
     BookImportFieldOption, BookImportStatusOption
 } from '@/types'
-import { ElMessage } from 'element-plus'
-
-const instance = axios.create({
-    baseURL: '/api',
-    timeout: 10000,
-    headers: {
-        'Content-Type': 'application/json'
-    }
-})
-
-// 请求拦截器
-instance.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token')
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`
-        }
-        return config
-    },
-    (error) => {
-        return Promise.reject(error)
-    }
-)
-
-// 响应拦截器
-instance.interceptors.response.use(
-    (response) => response.data,
-    (error) => {
-        const message = error.response?.data?.detail || '请求失败，请稍后重试'
-        ElMessage.error(message)
-        return Promise.reject(error)
-    }
-)
 
 export const api = {
-    // 认证相关
     login: (username: string, password: string): Promise<LoginResponse> =>
-        instance.post('/auth/login', { username, password }),
+        post('/auth/login', { username, password }),
 
     register: (username: string, email: string, password: string): Promise<User> =>
-        instance.post('/auth/register', { username, email, password }),
+        post('/auth/register', { username, email, password }),
 
     getCurrentUser: (): Promise<User> =>
-        instance.get('/auth/me'),
+        get('/auth/me'),
 
-    // 图书相关
     getBooks: (params?: { page?: number; page_size?: number; search?: string; category?: string }): Promise<BookListResponse> =>
-        instance.get('/books', { params }),
+        get('/books', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    search: params?.search,
+                    category: params?.category
+                }
+            )
+        }),
 
     getBook: (id: number): Promise<Book> =>
-        instance.get(`/books/${id}`),
+        get(`/books/${id}`),
 
     createBook: (book: BookCreate): Promise<Book> =>
-        instance.post('/books', book),
+        post('/books', book),
 
     updateBook: (id: number, book: Partial<BookCreate>): Promise<Book> =>
-        instance.put(`/books/${id}`, book),
+        put(`/books/${id}`, book),
 
     deleteBook: (id: number): Promise<void> =>
-        instance.delete(`/books/${id}`),
+        del(`/books/${id}`),
 
     getCategories: (): Promise<string[]> =>
-        instance.get('/books/categories/list'),
+        get('/books/categories/list'),
 
     getPromotions: (params?: { page?: number; page_size?: number; status?: string; is_displayed?: boolean }): Promise<PromotionListResponse> =>
-        instance.get('/promotions', { params }),
+        get('/promotions', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    status: params?.status,
+                    is_displayed: params?.is_displayed
+                }
+            )
+        }),
 
     getPromotion: (id: number): Promise<Promotion> =>
-        instance.get(`/promotions/${id}`),
+        get(`/promotions/${id}`),
 
     createPromotion: (promotion: PromotionCreate): Promise<Promotion> =>
-        instance.post('/promotions', promotion),
+        post('/promotions', promotion),
 
     updatePromotion: (id: number, promotion: PromotionUpdate): Promise<Promotion> =>
-        instance.put(`/promotions/${id}`, promotion),
+        put(`/promotions/${id}`, promotion),
 
     deletePromotion: (id: number): Promise<void> =>
-        instance.delete(`/promotions/${id}`),
+        del(`/promotions/${id}`),
 
     deductPromotionStock: (promotionId: number, promotionBookId: number, quantity: number): Promise<Promotion> =>
-        instance.post(`/promotions/${promotionId}/deduct-stock`, { promotion_book_id: promotionBookId, quantity }),
+        post(`/promotions/${promotionId}/deduct-stock`, { promotion_book_id: promotionBookId, quantity }),
 
-    // 反馈相关
     uploadFeedbackAttachment: (file: File): Promise<FeedbackUploadResponse> => {
         const formData = new FormData()
         formData.append('file', file)
-        return instance.post('/feedbacks/upload', formData, {
+        return post('/feedbacks/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         })
     },
 
     createFeedback: (feedback: FeedbackCreate): Promise<Feedback> =>
-        instance.post('/feedbacks', feedback),
+        post('/feedbacks', feedback),
 
     getMyFeedbacks: (params?: {
         page?: number
@@ -129,13 +112,24 @@ export const api = {
         start_date?: string
         end_date?: string
     }): Promise<FeedbackListResponse> =>
-        instance.get('/feedbacks/my', { params }),
+        get('/feedbacks/my', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    status: params?.status,
+                    type: params?.type,
+                    start_date: params?.start_date,
+                    end_date: params?.end_date
+                }
+            )
+        }),
 
     getFeedback: (id: number): Promise<Feedback> =>
-        instance.get(`/feedbacks/${id}`),
+        get(`/feedbacks/${id}`),
 
     replyFeedback: (id: number, content: string): Promise<FeedbackReply> =>
-        instance.post(`/feedbacks/${id}/reply`, { content }),
+        post(`/feedbacks/${id}/reply`, { content }),
 
     getAllFeedbacks: (params?: {
         page?: number
@@ -146,60 +140,78 @@ export const api = {
         end_date?: string
         keyword?: string
     }): Promise<FeedbackListResponse> =>
-        instance.get('/feedbacks', { params }),
+        get('/feedbacks', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    status: params?.status,
+                    type: params?.type,
+                    start_date: params?.start_date,
+                    end_date: params?.end_date,
+                    keyword: params?.keyword
+                }
+            )
+        }),
 
     adminReplyFeedback: (id: number, reply: FeedbackReplySubmit): Promise<FeedbackReply> =>
-        instance.post(`/feedbacks/${id}/admin-reply`, reply),
+        post(`/feedbacks/${id}/admin-reply`, reply),
 
     updateFeedbackStatus: (id: number, status: string): Promise<Feedback> =>
-        instance.put(`/feedbacks/${id}/status`, { status }),
+        put(`/feedbacks/${id}/status`, { status }),
 
     getFeedbackTypes: (): Promise<FeedbackTypeOption[]> =>
-        instance.get('/feedbacks/types/list'),
+        get('/feedbacks/types/list'),
 
     getFeedbackStatuses: (): Promise<FeedbackStatusOption[]> =>
-        instance.get('/feedbacks/statuses/list'),
+        get('/feedbacks/statuses/list'),
 
-    // 试读章节相关 - 公开接口
     getPublicChapters: (bookId: number): Promise<BookChapterPublicListResponse> =>
-        instance.get(`/chapters/public/${bookId}`),
+        get(`/chapters/public/${bookId}`),
 
     getPublicChapter: (bookId: number, chapterId: number): Promise<BookChapterPublic> =>
-        instance.get(`/chapters/public/${bookId}/${chapterId}`),
+        get(`/chapters/public/${bookId}/${chapterId}`),
 
-    // 试读章节相关 - 管理接口
     getAdminChapters: (bookId: number): Promise<BookChapterListResponse> =>
-        instance.get(`/chapters/admin/${bookId}`),
+        get(`/chapters/admin/${bookId}`),
 
     getAdminChapter: (bookId: number, chapterId: number): Promise<BookChapter> =>
-        instance.get(`/chapters/admin/${bookId}/${chapterId}`),
+        get(`/chapters/admin/${bookId}/${chapterId}`),
 
     createChapter: (chapter: BookChapterCreate): Promise<BookChapter> =>
-        instance.post('/chapters', chapter),
+        post('/chapters', chapter),
 
     updateChapter: (chapterId: number, chapter: BookChapterUpdate): Promise<BookChapter> =>
-        instance.put(`/chapters/${chapterId}`, chapter),
+        put(`/chapters/${chapterId}`, chapter),
 
     toggleChapterPublic: (chapterId: number): Promise<BookChapter> =>
-        instance.patch(`/chapters/${chapterId}/toggle-public`),
+        patch(`/chapters/${chapterId}/toggle-public`),
 
     updateChapterSort: (chapterId: number, sortOrder: number): Promise<BookChapter> =>
-        instance.patch(`/chapters/${chapterId}/sort`, null, { params: { sort_order: sortOrder } }),
+        patch(`/chapters/${chapterId}/sort`, null, { params: { sort_order: sortOrder } }),
 
     deleteChapter: (chapterId: number): Promise<void> =>
-        instance.delete(`/chapters/${chapterId}`),
+        del(`/chapters/${chapterId}`),
 
     previewChapter: (chapterId: number): Promise<BookChapter> =>
-        instance.get(`/chapters/preview/${chapterId}`),
+        get(`/chapters/preview/${chapterId}`),
 
-    // 库存盘点相关
     getStockTakings: (params?: {
         page?: number
         page_size?: number
         status?: string
         keyword?: string
     }): Promise<StockTakingListResponse> =>
-        instance.get('/stock-takings', { params }),
+        get('/stock-takings', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    status: params?.status,
+                    keyword: params?.keyword
+                }
+            )
+        }),
 
     getStockTakingHistory: (params?: {
         page?: number
@@ -208,56 +220,72 @@ export const api = {
         start_date?: string
         end_date?: string
     }): Promise<StockTakingListResponse> =>
-        instance.get('/stock-takings/history', { params }),
+        get('/stock-takings/history', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    keyword: params?.keyword,
+                    start_date: params?.start_date,
+                    end_date: params?.end_date
+                }
+            )
+        }),
 
     getStockTaking: (id: number): Promise<StockTaking> =>
-        instance.get(`/stock-takings/${id}`),
+        get(`/stock-takings/${id}`),
 
     createStockTaking: (data: StockTakingCreate): Promise<StockTaking> =>
-        instance.post('/stock-takings', data),
+        post('/stock-takings', data),
 
     updateStockTaking: (id: number, data: StockTakingUpdate): Promise<StockTaking> =>
-        instance.put(`/stock-takings/${id}`, data),
+        put(`/stock-takings/${id}`, data),
 
     startStockTaking: (id: number): Promise<StockTaking> =>
-        instance.post(`/stock-takings/${id}/start`),
+        post(`/stock-takings/${id}/start`),
 
     batchEntryStock: (id: number, data: StockTakingBatchEntryRequest): Promise<StockTaking> =>
-        instance.post(`/stock-takings/${id}/entry`, data),
+        post(`/stock-takings/${id}/entry`, data),
 
     confirmStockTaking: (id: number): Promise<StockTaking> =>
-        instance.post(`/stock-takings/${id}/confirm`),
+        post(`/stock-takings/${id}/confirm`),
 
     cancelStockTaking: (id: number): Promise<StockTaking> =>
-        instance.post(`/stock-takings/${id}/cancel`),
+        post(`/stock-takings/${id}/cancel`),
 
     getStockTakingScopes: (): Promise<StockTakingScopeOption[]> =>
-        instance.get('/stock-takings/scopes/list'),
+        get('/stock-takings/scopes/list'),
 
-    // 供应商相关
     getSuppliers: (params?: {
         page?: number
         page_size?: number
         keyword?: string
     }): Promise<SupplierListResponse> =>
-        instance.get('/purchase-orders/suppliers', { params }),
+        get('/purchase-orders/suppliers', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    keyword: params?.keyword
+                }
+            )
+        }),
 
     getAllSuppliers: (): Promise<SupplierOption[]> =>
-        instance.get('/purchase-orders/suppliers/all'),
+        get('/purchase-orders/suppliers/all'),
 
     getSupplier: (id: number): Promise<Supplier> =>
-        instance.get(`/purchase-orders/suppliers/${id}`),
+        get(`/purchase-orders/suppliers/${id}`),
 
     createSupplier: (supplier: SupplierCreate): Promise<Supplier> =>
-        instance.post('/purchase-orders/suppliers', supplier),
+        post('/purchase-orders/suppliers', supplier),
 
     updateSupplier: (id: number, supplier: SupplierUpdate): Promise<Supplier> =>
-        instance.put(`/purchase-orders/suppliers/${id}`, supplier),
+        put(`/purchase-orders/suppliers/${id}`, supplier),
 
     deleteSupplier: (id: number): Promise<void> =>
-        instance.delete(`/purchase-orders/suppliers/${id}`),
+        del(`/purchase-orders/suppliers/${id}`),
 
-    // 采购单相关
     getPurchaseOrders: (params?: {
         page?: number
         page_size?: number
@@ -267,55 +295,67 @@ export const api = {
         start_date?: string
         end_date?: string
     }): Promise<PurchaseOrderListResponse> =>
-        instance.get('/purchase-orders', { params }),
+        get('/purchase-orders', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    status: params?.status,
+                    supplier_id: params?.supplier_id,
+                    keyword: params?.keyword,
+                    start_date: params?.start_date,
+                    end_date: params?.end_date
+                }
+            )
+        }),
 
     getPurchaseOrder: (id: number): Promise<PurchaseOrder> =>
-        instance.get(`/purchase-orders/${id}`),
+        get(`/purchase-orders/${id}`),
 
     createPurchaseOrder: (order: PurchaseOrderCreate): Promise<PurchaseOrder> =>
-        instance.post('/purchase-orders', order),
+        post('/purchase-orders', order),
 
     updatePurchaseOrder: (id: number, order: PurchaseOrderUpdate): Promise<PurchaseOrder> =>
-        instance.put(`/purchase-orders/${id}`, order),
+        put(`/purchase-orders/${id}`, order),
 
     submitPurchaseOrder: (id: number): Promise<PurchaseOrder> =>
-        instance.post(`/purchase-orders/${id}/submit`),
+        post(`/purchase-orders/${id}/submit`),
 
     confirmPurchaseOrder: (id: number): Promise<PurchaseOrder> =>
-        instance.post(`/purchase-orders/${id}/confirm`),
+        post(`/purchase-orders/${id}/confirm`),
 
     cancelPurchaseOrder: (id: number): Promise<PurchaseOrder> =>
-        instance.post(`/purchase-orders/${id}/cancel`),
+        post(`/purchase-orders/${id}/cancel`),
 
     getPurchaseOrderStatuses: (): Promise<PurchaseOrderStatusOption[]> =>
-        instance.get('/purchase-orders/statuses/list'),
+        get('/purchase-orders/statuses/list'),
 
     getPurchaseOrderStockChanges: (id: number): Promise<StockChange[]> =>
-        instance.get(`/purchase-orders/${id}/stock-changes`),
+        get(`/purchase-orders/${id}/stock-changes`),
 
     getAddresses: (): Promise<UserAddressListResponse> =>
-        instance.get('/addresses'),
+        get('/addresses'),
 
     getDefaultAddress: (): Promise<UserAddress> =>
-        instance.get('/addresses/default'),
+        get('/addresses/default'),
 
     getAddress: (id: number): Promise<UserAddress> =>
-        instance.get(`/addresses/${id}`),
+        get(`/addresses/${id}`),
 
     createAddress: (address: UserAddressCreate): Promise<UserAddress> =>
-        instance.post('/addresses', address),
+        post('/addresses', address),
 
     updateAddress: (id: number, address: UserAddressUpdate): Promise<UserAddress> =>
-        instance.put(`/addresses/${id}`, address),
+        put(`/addresses/${id}`, address),
 
     setDefaultAddress: (id: number): Promise<UserAddress> =>
-        instance.patch(`/addresses/${id}/set-default`),
+        patch(`/addresses/${id}/set-default`),
 
     deleteAddress: (id: number): Promise<UserAddressDeleteResponse> =>
-        instance.delete(`/addresses/${id}`),
+        del(`/addresses/${id}`),
 
     reassignDefaultAddress: (data: UserAddressReassignDefaultRequest): Promise<UserAddress> =>
-        instance.post('/addresses/reassign-default', data),
+        post('/addresses/reassign-default', data),
 
     getAddressTags: (): Promise<AddressTagOption[]> =>
         Promise.resolve([
@@ -326,15 +366,14 @@ export const api = {
         ]),
 
     getBooksCompare: (bookIds: number[]): Promise<BookCompareResponse> =>
-        instance.post('/books/compare', { book_ids: bookIds }),
+        post('/books/compare', { book_ids: bookIds }),
 
     saveCompareList: (bookIds: number[]): Promise<{ message: string }> =>
-        instance.post('/books/compare/save', { book_ids: bookIds }),
+        post('/books/compare/save', { book_ids: bookIds }),
 
     getSavedCompareList: (): Promise<{ book_ids: number[] }> =>
-        instance.get('/books/compare/saved'),
+        get('/books/compare/saved'),
 
-    // API Key 管理相关
     getAPIKeys: (params?: {
         page?: number
         page_size?: number
@@ -342,25 +381,35 @@ export const api = {
         is_enabled?: boolean
         risk_status?: string
     }): Promise<APIKeyListResponse> =>
-        instance.get('/api-keys', { params }),
+        get('/api-keys', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    search: params?.search,
+                    is_enabled: params?.is_enabled,
+                    risk_status: params?.risk_status
+                }
+            )
+        }),
 
     getAPIKey: (id: number): Promise<APIKey> =>
-        instance.get(`/api-keys/${id}`),
+        get(`/api-keys/${id}`),
 
     createAPIKey: (data: APIKeyCreate): Promise<APIKeyCreateResponse> =>
-        instance.post('/api-keys', data),
+        post('/api-keys', data),
 
     updateAPIKey: (id: number, data: APIKeyUpdate): Promise<APIKey> =>
-        instance.put(`/api-keys/${id}`, data),
+        put(`/api-keys/${id}`, data),
 
     deleteAPIKey: (id: number): Promise<void> =>
-        instance.delete(`/api-keys/${id}`),
+        del(`/api-keys/${id}`),
 
     toggleAPIKey: (id: number): Promise<APIKey> =>
-        instance.post(`/api-keys/${id}/toggle`),
+        post(`/api-keys/${id}/toggle`),
 
     rotateAPIKey: (id: number): Promise<APIKeyRotateResponse> =>
-        instance.post(`/api-keys/${id}/rotate`),
+        post(`/api-keys/${id}/rotate`),
 
     getAPIKeyLogs: (id: number, params?: {
         page?: number
@@ -369,35 +418,50 @@ export const api = {
         start_date?: string
         end_date?: string
     }): Promise<APIKeyCallLogListResponse> =>
-        instance.get(`/api-keys/${id}/logs`, { params }),
+        get(`/api-keys/${id}/logs`, {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    status: params?.status,
+                    start_date: params?.start_date,
+                    end_date: params?.end_date
+                }
+            )
+        }),
 
     getAPIAccessScopes: (): Promise<APIKeyAccessScopeOption[]> =>
-        instance.get('/api-keys/scopes/list'),
+        get('/api-keys/scopes/list'),
 
     getAPIRatePeriods: (): Promise<APIKeyRatePeriodOption[]> =>
-        instance.get('/api-keys/rate-periods/list'),
+        get('/api-keys/rate-periods/list'),
 
     getAPIKeyStatuses: (): Promise<APIKeyStatusOption[]> =>
-        instance.get('/api-keys/statuses/list'),
+        get('/api-keys/statuses/list'),
 
-    // 开放 API 测试
     testOpenAPI: (apiKey: string, params?: {
         page?: number
         page_size?: number
         search?: string
         category?: string
     }): Promise<any> =>
-        instance.get('/open/books', {
-            params,
+        get('/open/books', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    search: params?.search,
+                    category: params?.category
+                }
+            ),
             headers: { 'X-API-Key': apiKey }
         }),
 
-    // 公告相关
     getDisplayAnnouncements: (position: string): Promise<Announcement[]> =>
-        instance.get('/announcements/display', { params: { position } }),
+        get('/announcements/display', { params: { position } }),
 
     closeAnnouncement: (id: number): Promise<void> =>
-        instance.post(`/announcements/${id}/close`),
+        post(`/announcements/${id}/close`),
 
     getAnnouncements: (params?: {
         page?: number
@@ -406,55 +470,64 @@ export const api = {
         position?: string
         keyword?: string
     }): Promise<AnnouncementListResponse> =>
-        instance.get('/announcements', { params }),
+        get('/announcements', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    status: params?.status,
+                    position: params?.position,
+                    keyword: params?.keyword
+                }
+            )
+        }),
 
     getAnnouncement: (id: number): Promise<Announcement> =>
-        instance.get(`/announcements/${id}`),
+        get(`/announcements/${id}`),
 
     createAnnouncement: (data: AnnouncementCreate): Promise<Announcement> =>
-        instance.post('/announcements', data),
+        post('/announcements', data),
 
     updateAnnouncement: (id: number, data: AnnouncementUpdate): Promise<Announcement> =>
-        instance.put(`/announcements/${id}`, data),
+        put(`/announcements/${id}`, data),
 
     deleteAnnouncement: (id: number): Promise<void> =>
-        instance.delete(`/announcements/${id}`),
+        del(`/announcements/${id}`),
 
     toggleAnnouncement: (id: number): Promise<Announcement> =>
-        instance.post(`/announcements/${id}/toggle`),
+        post(`/announcements/${id}/toggle`),
 
     getAnnouncementPositions: (): Promise<AnnouncementDisplayPositionOption[]> =>
-        instance.get('/announcements/positions/list'),
+        get('/announcements/positions/list'),
 
     getAnnouncementTypes: (): Promise<AnnouncementDisplayTypeOption[]> =>
-        instance.get('/announcements/types/list'),
+        get('/announcements/types/list'),
 
     getAnnouncementTargetUserTypes: (): Promise<AnnouncementTargetUserTypeOption[]> =>
-        instance.get('/announcements/target-user-types/list'),
+        get('/announcements/target-user-types/list'),
 
     getAnnouncementStatuses: (): Promise<AnnouncementStatusOption[]> =>
-        instance.get('/announcements/statuses/list'),
+        get('/announcements/statuses/list'),
 
-    // 图书导入相关
     uploadBookImportFile: (file: File): Promise<BookImportUploadResponse> => {
         const formData = new FormData()
         formData.append('file', file)
-        return instance.post('/books/import/upload', formData, {
+        return post('/books/import/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         })
     },
 
     getBookImportFields: (): Promise<BookImportFieldOption[]> =>
-        instance.get('/books/import/fields'),
+        get('/books/import/fields'),
 
     previewBookImport: (data: BookImportPreviewRequest): Promise<BookImportPreviewResponse> =>
-        instance.post('/books/import/preview', data),
+        post('/books/import/preview', data),
 
     confirmBookImport: (data: BookImportConfirmRequest): Promise<BookImportProgressResponse> =>
-        instance.post('/books/import/confirm', data),
+        post('/books/import/confirm', data),
 
     getBookImportProgress: (importRecordId: number): Promise<BookImportProgressResponse> =>
-        instance.get(`/books/import/progress/${importRecordId}`),
+        get(`/books/import/progress/${importRecordId}`),
 
     getBookImportRecords: (params?: {
         page?: number
@@ -462,12 +535,23 @@ export const api = {
         status?: string
         keyword?: string
     }): Promise<BookImportRecordListResponse> =>
-        instance.get('/books/import/records', { params }),
+        get('/books/import/records', {
+            params: buildPaginationParams(
+                params?.page ?? 1,
+                params?.page_size ?? 10,
+                {
+                    status: params?.status,
+                    keyword: params?.keyword
+                }
+            )
+        }),
 
     getBookImportRecordDetail: (importRecordId: number, params?: {
         status_filter?: string
     }): Promise<BookImportRecordDetail> =>
-        instance.get(`/books/import/records/${importRecordId}`, { params }),
+        get(`/books/import/records/${importRecordId}`, {
+            params: params?.status_filter ? { status_filter: params.status_filter } : undefined
+        }),
 
     getBookImportStatuses: (): Promise<BookImportStatusOption[]> =>
         Promise.resolve([
