@@ -17,7 +17,7 @@ export interface RequestOptions {
 
 function createRequestInstance(options: RequestOptions = {}): AxiosInstance {
   const instance = axios.create({
-    baseURL: options.baseURL || '/api',
+    baseURL: options.baseURL || import.meta.env.VITE_API_BASE_URL || '/api',
     timeout: options.timeout || 10000,
     headers: {
       'Content-Type': 'application/json'

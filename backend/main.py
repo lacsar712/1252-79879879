@@ -9,6 +9,9 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from database import engine
 from models import Base
@@ -26,7 +29,6 @@ from routes.api_keys import router as api_keys_router
 from routes.open_api import router as open_api_router
 from routes.announcements import router as announcements_router
 
-# 配置日志
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -37,17 +39,14 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
-    # 启动时初始化数据库
     logger.info("正在初始化数据库...")
     init_db()
     seed_data()
     logger.info("数据库初始化完成")
     yield
-    # 关闭时的清理工作
     logger.info("应用关闭")
 
 
-# 创建 FastAPI 应用
 app = FastAPI(
     title="现代化在线书店 API",
     description="基于 FastAPI 构建的在线书店后端服务，提供用户认证和图书管理功能",
@@ -55,17 +54,21 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# 配置 CORS
+cors_origins_env = os.getenv("CORS_ORIGINS", "*")
+if cors_origins_env == "*":
+    allow_origins = ["*"]
+else:
+    allow_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 生产环境应该限制具体域名
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# 全局异常处理
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """全局异常处理器"""
@@ -76,7 +79,6 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# 注册路由
 app.include_router(auth_router)
 app.include_router(books_router)
 app.include_router(book_imports_router)
@@ -90,10 +92,9 @@ app.include_router(api_keys_router)
 app.include_router(open_api_router)
 app.include_router(announcements_router)
 
-# 挂载静态文件
-# 确保static目录存在
-os.makedirs("static", exist_ok=True)
-app.mount("/api/static", StaticFiles(directory="static"), name="static")
+static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+os.makedirs(static_dir, exist_ok=True)
+app.mount("/api/static", StaticFiles(directory=static_dir), name="static")
 
 
 @app.get("/")
