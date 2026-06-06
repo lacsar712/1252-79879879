@@ -7,7 +7,6 @@ import random
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 
 from database import get_db
 from models import Book, User
@@ -16,6 +15,11 @@ from schemas import (
     BookCompareRequest, BookCompareResponse, BookCompareData
 )
 from auth import get_current_admin_user, get_current_user
+from services.book_service import (
+    get_books_list,
+    get_categories_list,
+    validate_admin_permission
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/books", tags=["图书管理"])
@@ -54,47 +58,21 @@ def get_books(
     db: Session = Depends(get_db)
 ):
     """获取图书列表（支持分页、搜索、分类筛选和价格排序）"""
-    query = db.query(Book)
-    
-    if search:
-        search_pattern = f"%{search}%"
-        query = query.filter(
-            or_(
-                Book.title.like(search_pattern),
-                Book.author.like(search_pattern),
-                Book.publisher.like(search_pattern)
-            )
-        )
-    
-    if category:
-        query = query.filter(Book.category == category)
-    
-    total = query.count()
-    
-    if sort_by == "price":
-        if sort_order.lower() == "desc":
-            query = query.order_by(Book.price.desc())
-        else:
-            query = query.order_by(Book.price.asc())
-    else:
-        query = query.order_by(Book.created_at.desc())
-    
-    offset = (page - 1) * page_size
-    books = query.offset(offset).limit(page_size).all()
-    
-    return BookListResponse(
-        total=total,
+    return get_books_list(
+        db=db,
         page=page,
         page_size=page_size,
-        items=books
+        search=search,
+        category=category,
+        sort_by=sort_by,
+        sort_order=sort_order
     )
 
 
 @router.get("/categories/list", response_model=list)
 def get_categories(db: Session = Depends(get_db)):
     """获取所有分类"""
-    categories = db.query(Book.category).distinct().filter(Book.category.isnot(None)).all()
-    return [cat[0] for cat in categories if cat[0]]
+    return get_categories_list(db)
 
 
 @router.get("/{book_id}", response_model=BookResponse)
