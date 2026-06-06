@@ -47,14 +47,15 @@ def generate_mock_tags(book_id: int, category: Optional[str]) -> List[str]:
 def get_books(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(10, ge=1, le=100, description="每页数量"),
-    search: Optional[str] = Query(None, description="搜索关键词（书名或作者）"),
+    search: Optional[str] = Query(None, description="搜索关键词（书名、作者或出版社）"),
     category: Optional[str] = Query(None, description="分类筛选"),
+    sort_by: Optional[str] = Query(None, description="排序字段：price"),
+    sort_order: str = Query("asc", description="排序方向：asc 或 desc"),
     db: Session = Depends(get_db)
 ):
-    """获取图书列表（支持分页和搜索）"""
+    """获取图书列表（支持分页、搜索、分类筛选和价格排序）"""
     query = db.query(Book)
     
-    # 搜索过滤
     if search:
         search_pattern = f"%{search}%"
         query = query.filter(
@@ -65,16 +66,21 @@ def get_books(
             )
         )
     
-    # 分类过滤
     if category:
         query = query.filter(Book.category == category)
     
-    # 获取总数
     total = query.count()
     
-    # 分页
+    if sort_by == "price":
+        if sort_order.lower() == "desc":
+            query = query.order_by(Book.price.desc())
+        else:
+            query = query.order_by(Book.price.asc())
+    else:
+        query = query.order_by(Book.created_at.desc())
+    
     offset = (page - 1) * page_size
-    books = query.order_by(Book.created_at.desc()).offset(offset).limit(page_size).all()
+    books = query.offset(offset).limit(page_size).all()
     
     return BookListResponse(
         total=total,
